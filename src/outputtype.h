@@ -1,10 +1,10 @@
 // Copyright (c) 2009-2010 Satoshi Nakamoto
-// Copyright (c) 2009-present The Bitcoin Core developers
+// Copyright (c) 2009-present The QTC Core developers
 // Distributed under the MIT software license, see the accompanying
 // file COPYING or http://www.opensource.org/licenses/mit-license.php.
 
-#ifndef BITCOIN_OUTPUTTYPE_H
-#define BITCOIN_OUTPUTTYPE_H
+#ifndef QTC_OUTPUTTYPE_H
+#define QTC_OUTPUTTYPE_H
 
 #include <addresstype.h>
 #include <script/signingprovider.h>
@@ -12,7 +12,6 @@
 #include <array>
 #include <optional>
 #include <string>
-#include <string_view>
 #include <vector>
 
 enum class OutputType {
@@ -30,9 +29,8 @@ static constexpr auto OUTPUT_TYPES = std::array{
     OutputType::BECH32M,
 };
 
-std::optional<OutputType> ParseOutputType(std::string_view str);
+std::optional<OutputType> ParseOutputType(const std::string& str);
 const std::string& FormatOutputType(OutputType type);
-std::string FormatAllOutputTypes();
 
 /**
  * Get a destination of the requested type (if possible) to the specified script.
@@ -44,4 +42,4 @@ CTxDestination AddAndGetDestinationForScript(FlatSigningProvider& keystore, cons
 /** Get the OutputType for a CTxDestination */
 std::optional<OutputType> OutputTypeFromDestination(const CTxDestination& dest);
 
-#endif // BITCOIN_OUTPUTTYPE_H
+#endif // QTC_OUTPUTTYPE_H

@@ -1,9 +1,9 @@
-// Copyright (c) 2012-present The Bitcoin Core developers
+// Copyright (c) 2012-present The QTC Core developers
 // Distributed under the MIT software license, see the accompanying
 // file COPYING or http://www.opensource.org/licenses/mit-license.php.
 
-#ifndef BITCOIN_DBWRAPPER_H
-#define BITCOIN_DBWRAPPER_H
+#ifndef QTC_DBWRAPPER_H
+#define QTC_DBWRAPPER_H
 
 #include <attributes.h>
 #include <serialize.h>
@@ -18,6 +18,7 @@
 #include <optional>
 #include <stdexcept>
 #include <string>
+#include <vector>
 
 static const size_t DBWRAPPER_PREALLOC_KEY_SIZE = 64;
 static const size_t DBWRAPPER_PREALLOC_VALUE_SIZE = 1024;
@@ -62,7 +63,8 @@ namespace dbwrapper_private {
  * Database obfuscation should be considered an implementation detail of the
  * specific database.
  */
-const Obfuscation& GetObfuscation(const CDBWrapper&);
+const std::vector<unsigned char>& GetObfuscateKey(const CDBWrapper &w);
+
 }; // namespace dbwrapper_private
 
 bool DestroyDB(const std::string& path_str);
@@ -164,7 +166,7 @@ public:
     template<typename V> bool GetValue(V& value) {
         try {
             DataStream ssValue{GetValueImpl()};
-            dbwrapper_private::GetObfuscation(parent)(ssValue);
+            ssValue.Xor(dbwrapper_private::GetObfuscateKey(parent));
             ssValue >> value;
         } catch (const std::exception&) {
             return false;
@@ -177,7 +179,7 @@ struct LevelDBContext;
 
 class CDBWrapper
 {
-    friend const Obfuscation& dbwrapper_private::GetObfuscation(const CDBWrapper&);
+    friend const std::vector<unsigned char>& dbwrapper_private::GetObfuscateKey(const CDBWrapper &w);
 private:
     //! holds all leveldb-specific fields of this class
     std::unique_ptr<LevelDBContext> m_db_context;
@@ -185,11 +187,16 @@ private:
     //! the name of this database
     std::string m_name;
 
-    //! optional XOR-obfuscation of the database
-    Obfuscation m_obfuscation;
+    //! a key used for optional XOR-obfuscation of the database
+    std::vector<unsigned char> obfuscate_key;
 
-    //! obfuscation key storage key, null-prefixed to avoid collisions
-    inline static const std::string OBFUSCATION_KEY{"\000obfuscate_key", 14}; // explicit size to avoid truncation at leading \0
+    //! the key under which the obfuscation key is stored
+    static const std::string OBFUSCATE_KEY_KEY;
+
+    //! the length of the obfuscate key in number of bytes
+    static const unsigned int OBFUSCATE_KEY_NUM_BYTES;
+
+    std::vector<unsigned char> CreateObfuscateKey() const;
 
     //! path to filesystem storage
     const fs::path m_path;
@@ -221,7 +228,7 @@ public:
         }
         try {
             DataStream ssValue{MakeByteSpan(*strValue)};
-            m_obfuscation(ssValue);
+            ssValue.Xor(obfuscate_key);
             ssValue >> value;
         } catch (const std::exception&) {
             return false;
@@ -230,11 +237,11 @@ public:
     }
 
     template <typename K, typename V>
-    void Write(const K& key, const V& value, bool fSync = false)
+    bool Write(const K& key, const V& value, bool fSync = false)
     {
         CDBBatch batch(*this);
         batch.Write(key, value);
-        WriteBatch(batch, fSync);
+        return WriteBatch(batch, fSync);
     }
 
     //! @returns filesystem path to the on-disk data.
@@ -255,14 +262,14 @@ public:
     }
 
     template <typename K>
-    void Erase(const K& key, bool fSync = false)
+    bool Erase(const K& key, bool fSync = false)
     {
         CDBBatch batch(*this);
         batch.Erase(key);
-        WriteBatch(batch, fSync);
+        return WriteBatch(batch, fSync);
     }
 
-    void WriteBatch(CDBBatch& batch, bool fSync = false);
+    bool WriteBatch(CDBBatch& batch, bool fSync = false);
 
     // Get an estimate of LevelDB memory usage (in bytes).
     size_t DynamicMemoryUsage() const;
@@ -286,4 +293,4 @@ public:
     }
 };
 
-#endif // BITCOIN_DBWRAPPER_H
+#endif // QTC_DBWRAPPER_H

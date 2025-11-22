@@ -1,4 +1,4 @@
-// Copyright (c) 2011-2022 The Bitcoin Core developers
+// Copyright (c) 2011-2022 The QTC Core developers
 // Distributed under the MIT software license, see the accompanying
 // file COPYING or http://www.opensource.org/licenses/mit-license.php.
 
@@ -74,11 +74,11 @@ static void ProcessPCP()
             // Open a port mapping on whatever local address we have toward the gateway.
             struct in_addr inaddr_any;
             inaddr_any.s_addr = htonl(INADDR_ANY);
-            auto res = PCPRequestPortMap(pcp_nonce, *gateway4, CNetAddr(inaddr_any), private_port, requested_lifetime, g_mapport_interrupt);
+            auto res = PCPRequestPortMap(pcp_nonce, *gateway4, CNetAddr(inaddr_any), private_port, requested_lifetime);
             MappingError* pcp_err = std::get_if<MappingError>(&res);
             if (pcp_err && *pcp_err == MappingError::UNSUPP_VERSION) {
                 LogPrintLevel(BCLog::NET, BCLog::Level::Debug, "portmap: Got unsupported PCP version response, falling back to NAT-PMP\n");
-                res = NATPMPRequestPortMap(*gateway4, private_port, requested_lifetime, g_mapport_interrupt);
+                res = NATPMPRequestPortMap(*gateway4, private_port, requested_lifetime);
             }
             handle_mapping(res);
         }
@@ -93,14 +93,14 @@ static void ProcessPCP()
             // Try to open pinholes for all routable local IPv6 addresses.
             for (const auto &addr: GetLocalAddresses()) {
                 if (!addr.IsRoutable() || !addr.IsIPv6()) continue;
-                auto res = PCPRequestPortMap(pcp_nonce, *gateway6, addr, private_port, requested_lifetime, g_mapport_interrupt);
+                auto res = PCPRequestPortMap(pcp_nonce, *gateway6, addr, private_port, requested_lifetime);
                 handle_mapping(res);
             }
         }
 
         // Log message if we got NO_RESOURCES.
         if (no_resources) {
-            LogPrintLevel(BCLog::NET, BCLog::Level::Warning, "portmap: At least one mapping failed because of a NO_RESOURCES error. This usually indicates that the port is already used on the router. If this is the only instance of bitcoin running on the network, this will resolve itself automatically. Otherwise, you might want to choose a different P2P port to prevent this conflict.\n");
+            LogPrintLevel(BCLog::NET, BCLog::Level::Warning, "portmap: At least one mapping failed because of a NO_RESOURCES error. This usually indicates that the port is already used on the router. If this is the only instance of qtc running on the network, this will resolve itself automatically. Otherwise, you might want to choose a different P2P port to prevent this conflict.\n");
         }
 
         // Sanity-check returned lifetime.

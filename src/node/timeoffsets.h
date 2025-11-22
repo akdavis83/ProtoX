@@ -1,9 +1,9 @@
-// Copyright (c) 2024-present The Bitcoin Core developers
+// Copyright (c) 2024-present The QTC Core developers
 // Distributed under the MIT software license, see the accompanying
 // file COPYING or http://www.opensource.org/licenses/mit-license.php.
 
-#ifndef BITCOIN_NODE_TIMEOFFSETS_H
-#define BITCOIN_NODE_TIMEOFFSETS_H
+#ifndef QTC_NODE_TIMEOFFSETS_H
+#define QTC_NODE_TIMEOFFSETS_H
 
 #include <sync.h>
 
@@ -46,4 +46,4 @@ public:
     bool WarnIfOutOfSync() const EXCLUSIVE_LOCKS_REQUIRED(!m_mutex);
 };
 
-#endif // BITCOIN_NODE_TIMEOFFSETS_H
+#endif // QTC_NODE_TIMEOFFSETS_H

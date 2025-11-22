@@ -1,9 +1,9 @@
-// Copyright (c) 2023 The Bitcoin Core developers
+// Copyright (c) 2023 The QTC Core developers
 // Distributed under the MIT software license, see the accompanying
 // file COPYING or http://www.opensource.org/licenses/mit-license.php.
 
-#ifndef BITCOIN_NODE_KERNEL_NOTIFICATIONS_H
-#define BITCOIN_NODE_KERNEL_NOTIFICATIONS_H
+#ifndef QTC_NODE_KERNEL_NOTIFICATIONS_H
+#define QTC_NODE_KERNEL_NOTIFICATIONS_H
 
 #include <kernel/notifications_interface.h>
 
@@ -35,7 +35,7 @@ public:
     KernelNotifications(const std::function<bool()>& shutdown_request, std::atomic<int>& exit_status, node::Warnings& warnings)
         : m_shutdown_request(shutdown_request), m_exit_status{exit_status}, m_warnings{warnings} {}
 
-    [[nodiscard]] kernel::InterruptResult blockTip(SynchronizationState state, const CBlockIndex& index, double verification_progress) override EXCLUSIVE_LOCKS_REQUIRED(!m_tip_block_mutex);
+    [[nodiscard]] kernel::InterruptResult blockTip(SynchronizationState state, CBlockIndex& index, double verification_progress) override EXCLUSIVE_LOCKS_REQUIRED(!m_tip_block_mutex);
 
     void headerTip(SynchronizationState state, int64_t height, int64_t timestamp, bool presync) override;
 
@@ -73,4 +73,4 @@ void ReadNotificationArgs(const ArgsManager& args, KernelNotifications& notifica
 
 } // namespace node
 
-#endif // BITCOIN_NODE_KERNEL_NOTIFICATIONS_H
+#endif // QTC_NODE_KERNEL_NOTIFICATIONS_H

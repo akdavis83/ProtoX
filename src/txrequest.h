@@ -1,9 +1,9 @@
-// Copyright (c) 2020-present The Bitcoin Core developers
+// Copyright (c) 2020-present The QTC Core developers
 // Distributed under the MIT software license, see the accompanying
 // file COPYING or http://www.opensource.org/licenses/mit-license.php.
 
-#ifndef BITCOIN_TXREQUEST_H
-#define BITCOIN_TXREQUEST_H
+#ifndef QTC_TXREQUEST_H
+#define QTC_TXREQUEST_H
 
 #include <primitives/transaction.h>
 #include <net.h>
@@ -95,7 +95,7 @@
  *
  * Context:
  * - In an earlier version of the transaction request logic it was possible for a peer to prevent us from seeing a
- *   specific transaction. See https://bitcoincore.org/en/2024/07/03/disclose_already_asked_for.
+ *   specific transaction. See https://qtccore.org/en/2024/07/03/disclose_already_asked_for.
  */
 class TxRequestTracker {
     // Avoid littering this header file with implementation details.
@@ -133,7 +133,7 @@ public:
      * from the specified gtxid.
      */
     void ReceivedInv(NodeId peer, const GenTxid& gtxid, bool preferred,
-                     std::chrono::microseconds reqtime);
+        std::chrono::microseconds reqtime);
 
     /** Deletes all announcements for a given peer.
      *
@@ -158,13 +158,14 @@ public:
      *    exists, and for which the specified peer is the best choice among all (reqtime <= now) CANDIDATE
      *    announcements with the same txhash (subject to preferredness rules, and tiebreaking using a deterministic
      *    salted hash of peer and txhash).
-     *  - The selected announcements are returned in announcement order (even if multiple were added at the same
-     *    time, or when the clock went backwards while they were being added). This is done to minimize disruption
-     *    from dependent transactions being requested out of order: if multiple dependent transactions are announced
-     *    simultaneously by one peer, and end up being requested from them, the requests will happen in announcement order.
+     *  - The selected announcements are converted to GenTxids using their is_wtxid flag, and returned in
+     *    announcement order (even if multiple were added at the same time, or when the clock went backwards while
+     *    they were being added). This is done to minimize disruption from dependent transactions being requested
+     *    out of order: if multiple dependent transactions are announced simultaneously by one peer, and end up
+     *    being requested from them, the requests will happen in announcement order.
      */
     std::vector<GenTxid> GetRequestable(NodeId peer, std::chrono::microseconds now,
-                                        std::vector<std::pair<NodeId, GenTxid>>* expired = nullptr);
+        std::vector<std::pair<NodeId, GenTxid>>* expired = nullptr);
 
     /** Marks a transaction as requested, with a specified expiry.
      *
@@ -215,4 +216,4 @@ public:
     void PostGetRequestableSanityCheck(std::chrono::microseconds now) const;
 };
 
-#endif // BITCOIN_TXREQUEST_H
+#endif // QTC_TXREQUEST_H

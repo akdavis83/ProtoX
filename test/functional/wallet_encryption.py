@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-# Copyright (c) 2016-2022 The Bitcoin Core developers
+# Copyright (c) 2016-2022 The Quantum Coin Core developers
 # Distributed under the MIT software license, see the accompanying
 # file COPYING or http://www.opensource.org/licenses/mit-license.php.
 """Test Wallet encryption"""
@@ -8,7 +8,7 @@ import time
 import subprocess
 
 from test_framework.messages import hash256
-from test_framework.test_framework import BitcoinTestFramework
+from test_framework.test_framework import Quantum CoinTestFramework
 from test_framework.util import (
     assert_raises_rpc_error,
     assert_equal,
@@ -16,7 +16,7 @@ from test_framework.util import (
 from test_framework.wallet_util import WalletUnlock
 
 
-class WalletEncryptionTest(BitcoinTestFramework):
+class WalletEncryptionTest(Quantum CoinTestFramework):
     def set_test_params(self):
         self.setup_clean_chain = True
         self.num_nodes = 1
@@ -90,18 +90,17 @@ class WalletEncryptionTest(BitcoinTestFramework):
         assert_equal(actual_time, expected_time)
         self.nodes[0].walletlock()
 
-        if not self.options.usecli: # can't be done with the test framework for cli since subprocess.Popen doesn't allow null characters
-            # Test passphrase with null characters
-            passphrase_with_nulls = "Phrase\0With\0Nulls"
-            self.nodes[0].walletpassphrasechange(passphrase2, passphrase_with_nulls)
-            # walletpassphrasechange should not stop at null characters
-            assert_raises_rpc_error(-14, "wallet passphrase entered was incorrect", self.nodes[0].walletpassphrase, passphrase_with_nulls.partition("\0")[0], 10)
-            assert_raises_rpc_error(-14, "The wallet passphrase entered was incorrect", self.nodes[0].walletpassphrasechange, passphrase_with_nulls.partition("\0")[0], "abc")
-            assert_raises_rpc_error(-14, "wallet passphrase entered is incorrect. It contains a null character (ie - a zero byte)", self.nodes[0].walletpassphrase, passphrase_with_nulls + "\0", 10)
-            assert_raises_rpc_error(-14, "The old wallet passphrase entered is incorrect. It contains a null character (ie - a zero byte)", self.nodes[0].walletpassphrasechange, passphrase_with_nulls + "\0", "abc")
-            with WalletUnlock(self.nodes[0], passphrase_with_nulls):
-                sig = self.nodes[0].signmessage(address, msg)
-                assert self.nodes[0].verifymessage(address, sig, msg)
+        # Test passphrase with null characters
+        passphrase_with_nulls = "Phrase\0With\0Nulls"
+        self.nodes[0].walletpassphrasechange(passphrase2, passphrase_with_nulls)
+        # walletpassphrasechange should not stop at null characters
+        assert_raises_rpc_error(-14, "wallet passphrase entered was incorrect", self.nodes[0].walletpassphrase, passphrase_with_nulls.partition("\0")[0], 10)
+        assert_raises_rpc_error(-14, "The wallet passphrase entered was incorrect", self.nodes[0].walletpassphrasechange, passphrase_with_nulls.partition("\0")[0], "abc")
+        assert_raises_rpc_error(-14, "wallet passphrase entered is incorrect. It contains a null character (ie - a zero byte)", self.nodes[0].walletpassphrase, passphrase_with_nulls + "\0", 10)
+        assert_raises_rpc_error(-14, "The old wallet passphrase entered is incorrect. It contains a null character (ie - a zero byte)", self.nodes[0].walletpassphrasechange, passphrase_with_nulls + "\0", "abc")
+        with WalletUnlock(self.nodes[0], passphrase_with_nulls):
+            sig = self.nodes[0].signmessage(address, msg)
+            assert self.nodes[0].verifymessage(address, sig, msg)
 
         self.log.info("Test that wallets without private keys cannot be encrypted")
         self.nodes[0].createwallet(wallet_name="noprivs", disable_private_keys=True)

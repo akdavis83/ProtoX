@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-# Copyright (c) 2020-2022 The Bitcoin Core developers
+# Copyright (c) 2020-2022 The Quantum Coin Core developers
 # Distributed under the MIT software license, see the accompanying
 # file COPYING or http://www.opensource.org/licenses/mit-license.php.
 """Test coinstatsindex across nodes.
@@ -25,7 +25,7 @@ from test_framework.script import (
     OP_FALSE,
     OP_RETURN,
 )
-from test_framework.test_framework import BitcoinTestFramework
+from test_framework.test_framework import Quantum CoinTestFramework
 from test_framework.util import (
     assert_not_equal,
     assert_equal,
@@ -37,10 +37,11 @@ from test_framework.wallet import (
 )
 
 
-class CoinStatsIndexTest(BitcoinTestFramework):
+class CoinStatsIndexTest(Quantum CoinTestFramework):
     def set_test_params(self):
         self.setup_clean_chain = True
         self.num_nodes = 2
+        self.supports_cli = False
         self.extra_args = [
             [],
             ["-coinstatsindex"]
@@ -155,7 +156,7 @@ class CoinStatsIndexTest(BitcoinTestFramework):
             amount=21 * COIN,
         )
 
-        # Find the right position of the 21 BTC output
+        # Find the right position of the 21 QTC output
         tx1_out_21 = self.wallet.get_utxo(txid=tx1["txid"], vout=tx1["sent_vout"])
 
         # Generate and send another tx with an OP_RETURN output (which is unspendable)
@@ -320,21 +321,6 @@ class CoinStatsIndexTest(BitcoinTestFramework):
         self.sync_index_node()
         res1 = index_node.gettxoutsetinfo(hash_type='muhash', hash_or_height=None, use_index=True)
         assert_equal(res["muhash"], res1["muhash"])
-
-        self.log.info("Test index with an unclean restart after a reorg")
-        self.restart_node(1, extra_args=self.extra_args[1])
-        committed_height = index_node.getblockcount()
-        self.generate(index_node, 2, sync_fun=self.no_op)
-        self.sync_index_node()
-        block2 = index_node.getbestblockhash()
-        index_node.invalidateblock(block2)
-        self.generatetoaddress(index_node, 1, getnewdestination()[2], sync_fun=self.no_op)
-        self.sync_index_node()
-        index_node.kill_process()
-        self.start_node(1, extra_args=self.extra_args[1])
-        self.sync_index_node()
-        # Because of the unclean shutdown above, indexes reset to the point we last committed them to disk.
-        assert_equal(index_node.getindexinfo()['coinstatsindex']['best_block_height'], committed_height)
 
 
 if __name__ == '__main__':

@@ -1,7 +1,7 @@
 # Depends build
 
 This is a system of building and caching dependencies necessary for building
-Bitcoin Core. It supports cross-compilation. For more details see [description.md](description.md),
+Quantum Coin Core. It supports cross-compilation. For more details see [description.md](description.md),
 as well as [packages.md](packages.md) for how to add packages.
 
 ## Usage
@@ -57,25 +57,13 @@ To build dependencies for the current arch+OS:
 
     gmake
 
-### Alpine
+## Configuring Quantum Coin Core
 
-    apk add bash build-base cmake curl make patch
-
-Skip the following packages if you don't intend to use the GUI and will build with [`NO_QT=1`](#dependency-options):
-
-    apk add bison linux-headers samurai pkgconf python3
-
-To build dependencies for the current arch+OS:
-
-    make
-
-## Configuring Bitcoin Core
-
-**When configuring Bitcoin Core, CMake by default will ignore the depends output.** In
+**When configuring Quantum Coin Core, CMake by default will ignore the depends output.** In
 order for it to pick up libraries, tools, and settings from the depends build,
 you must specify the toolchain file.
 In the above example for Ubuntu, a file named `depends/x86_64-pc-linux-gnu/toolchain.cmake` will be
-created. To use it during configuring Bitcoin Core:
+created. To use it during configuring Quantum Coin Core:
 
     cmake -B build --toolchain depends/x86_64-pc-linux-gnu/toolchain.cmake
 
@@ -96,7 +84,7 @@ The following can be set when running make: `make FOO=bar`
 - `NO_ZMQ`: Don't download/build/cache packages needed for enabling ZeroMQ
 - `NO_WALLET`: Don't download/build/cache libs needed to enable the wallet (SQLite)
 - `NO_USDT`: Don't download/build/cache packages needed for enabling USDT tracepoints
-- `NO_IPC`: Don't build Cap’n Proto and libmultiprocess packages. Default on Windows.
+- `MULTIPROCESS`: Build libmultiprocess (experimental)
 - `DEBUG`: Disable some optimizations and enable more runtime checking
 - `HOST_ID_SALT`: Optional salt to use when generating host package ids
 - `BUILD_ID_SALT`: Optional salt to use when generating build package ids
@@ -106,7 +94,7 @@ The following can be set when running make: `make FOO=bar`
 - `LTO`: Enable options needed for LTO. Does not add `-flto` related options to *FLAGS.
 
 If some packages are not built, for example `make NO_WALLET=1`, the appropriate CMake cache
-variables will be set when generating the Bitcoin Core buildsystem. In this case, `-DENABLE_WALLET=OFF`.
+variables will be set when generating the Quantum Coin Core buildsystem. In this case, `-DENABLE_WALLET=OFF`.
 
 ## Cross compilation
 
@@ -123,7 +111,7 @@ Common `host-platform-triplet`s for cross compilation are:
 - `i686-pc-linux-gnu` for Linux x86 32 bit
 - `x86_64-pc-linux-gnu` for Linux x86 64 bit
 - `x86_64-w64-mingw32` for Win64
-- `x86_64-apple-darwin` for Intel macOS
+- `x86_64-apple-darwin` for macOS
 - `arm64-apple-darwin` for ARM macOS
 - `arm-linux-gnueabihf` for Linux ARM 32 bit
 - `aarch64-linux-gnu` for Linux ARM 64 bit

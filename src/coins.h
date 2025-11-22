@@ -1,10 +1,10 @@
 // Copyright (c) 2009-2010 Satoshi Nakamoto
-// Copyright (c) 2009-present The Bitcoin Core developers
+// Copyright (c) 2009-present The QTC Core developers
 // Distributed under the MIT software license, see the accompanying
 // file COPYING or http://www.opensource.org/licenses/mit-license.php.
 
-#ifndef BITCOIN_COINS_H
-#define BITCOIN_COINS_H
+#ifndef QTC_COINS_H
+#define QTC_COINS_H
 
 #include <compressor.h>
 #include <core_memusage.h>
@@ -271,10 +271,11 @@ struct CoinsViewCacheCursor
     //! This is an optimization compared to erasing all entries as the cursor iterates them when will_erase is set.
     //! Calling CCoinsMap::clear() afterwards is faster because a CoinsCachePair cannot be coerced back into a
     //! CCoinsMap::iterator to be erased, and must therefore be looked up again by key in the CCoinsMap before being erased.
-    CoinsViewCacheCursor(CoinsCachePair& sentinel LIFETIMEBOUND,
-                         CCoinsMap& map LIFETIMEBOUND,
-                         bool will_erase) noexcept
-        : m_sentinel(sentinel), m_map(map), m_will_erase(will_erase) {}
+    CoinsViewCacheCursor(size_t& usage LIFETIMEBOUND,
+                        CoinsCachePair& sentinel LIFETIMEBOUND,
+                        CCoinsMap& map LIFETIMEBOUND,
+                        bool will_erase) noexcept
+        : m_usage(usage), m_sentinel(sentinel), m_map(map), m_will_erase(will_erase) {}
 
     inline CoinsCachePair* Begin() const noexcept { return m_sentinel.second.Next(); }
     inline CoinsCachePair* End() const noexcept { return &m_sentinel; }
@@ -287,7 +288,7 @@ struct CoinsViewCacheCursor
         // Otherwise, clear the state of the entry.
         if (!m_will_erase) {
             if (current.second.coin.IsSpent()) {
-                assert(current.second.coin.DynamicMemoryUsage() == 0); // scriptPubKey was already cleared in SpendCoin
+                m_usage -= current.second.coin.DynamicMemoryUsage();
                 m_map.erase(current.first);
             } else {
                 current.second.SetClean();
@@ -298,6 +299,7 @@ struct CoinsViewCacheCursor
 
     inline bool WillErase(CoinsCachePair& current) const noexcept { return m_will_erase || current.second.coin.IsSpent(); }
 private:
+    size_t& m_usage;
     CoinsCachePair& m_sentinel;
     CCoinsMap& m_map;
     bool m_will_erase;
@@ -502,7 +504,7 @@ const Coin& AccessByTxid(const CCoinsViewCache& cache, const Txid& txid);
 /**
  * This is a minimally invasive approach to shutdown on LevelDB read errors from the
  * chainstate, while keeping user interface out of the common library, which is shared
- * between bitcoind, and bitcoin-qt and non-server tools.
+ * between qtcd, and qtc-qt and non-server tools.
  *
  * Writes do not need similar protection, as failure to write is handled by the caller.
 */
@@ -524,4 +526,4 @@ private:
 
 };
 
-#endif // BITCOIN_COINS_H
+#endif // QTC_COINS_H

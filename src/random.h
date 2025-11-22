@@ -1,10 +1,10 @@
 // Copyright (c) 2009-2010 Satoshi Nakamoto
-// Copyright (c) 2009-present The Bitcoin Core developers
+// Copyright (c) 2009-present The QTC Core developers
 // Distributed under the MIT software license, see the accompanying
 // file COPYING or http://www.opensource.org/licenses/mit-license.php.
 
-#ifndef BITCOIN_RANDOM_H
-#define BITCOIN_RANDOM_H
+#ifndef QTC_RANDOM_H
+#define QTC_RANDOM_H
 
 #include <crypto/chacha20.h>
 #include <crypto/common.h>
@@ -301,15 +301,6 @@ public:
         return ret;
     }
 
-    /** Generate fixed-size random bytes. */
-    template <size_t N, BasicByte B = std::byte>
-    std::array<B, N> randbytes() noexcept
-    {
-        std::array<B, N> ret;
-        Impl().fillrand(MakeWritableByteSpan(ret));
-        return ret;
-    }
-
     /** Generate a random 32-bit integer. */
     uint32_t rand32() noexcept { return Impl().template randbits<32>(); }
 
@@ -474,4 +465,4 @@ inline uint256 GetRandHash() noexcept
  */
 bool Random_SanityCheck();
 
-#endif // BITCOIN_RANDOM_H
+#endif // QTC_RANDOM_H

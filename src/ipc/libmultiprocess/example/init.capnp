@@ -1,4 +1,4 @@
-# Copyright (c) The Bitcoin Core developers
+# Copyright (c) 2021 The Bitcoin Core developers
 # Distributed under the MIT software license, see the accompanying
 # file COPYING or http://www.opensource.org/licenses/mit-license.php.
 
@@ -12,7 +12,8 @@ using Printer = import "printer.capnp";
 $Proxy.include("calculator.h");
 $Proxy.include("init.h");
 $Proxy.include("printer.h");
-$Proxy.includeTypes("types.h");
+$Proxy.includeTypes("calculator.capnp.proxy-types.h");
+$Proxy.includeTypes("printer.capnp.proxy-types.h");
 
 interface InitInterface $Proxy.wrap("Init") {
     construct @0 (threadMap: Proxy.ThreadMap) -> (threadMap :Proxy.ThreadMap);

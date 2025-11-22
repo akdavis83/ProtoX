@@ -1,13 +1,13 @@
-// Copyright (c) 2011-2022 The Bitcoin Core developers
+// Copyright (c) 2011-2022 The QTC Core developers
 // Distributed under the MIT software license, see the accompanying
 // file COPYING or http://www.opensource.org/licenses/mit-license.php.
 
-#ifndef BITCOIN_QT_TRANSACTIONRECORD_H
-#define BITCOIN_QT_TRANSACTIONRECORD_H
+#ifndef QTC_QT_TRANSACTIONRECORD_H
+#define QTC_QT_TRANSACTIONRECORD_H
 
 #include <consensus/amount.h>
-#include <primitives/transaction_identifier.h>
 #include <uint256.h>
+#include <util/transaction_identifier.h>
 
 #include <QList>
 #include <QString>
@@ -130,4 +130,4 @@ public:
     bool statusUpdateNeeded(const uint256& block_hash) const;
 };
 
-#endif // BITCOIN_QT_TRANSACTIONRECORD_H
+#endif // QTC_QT_TRANSACTIONRECORD_H

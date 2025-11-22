@@ -1,13 +1,13 @@
-// Copyright (c) 2011-2022 The Bitcoin Core developers
+// Copyright (c) 2011-2022 The QTC Core developers
 // Distributed under the MIT software license, see the accompanying
 // file COPYING or http://www.opensource.org/licenses/mit-license.php.
 
-#ifndef BITCOIN_WALLET_COINCONTROL_H
-#define BITCOIN_WALLET_COINCONTROL_H
+#ifndef QTC_WALLET_COINCONTROL_H
+#define QTC_WALLET_COINCONTROL_H
 
 #include <outputtype.h>
 #include <policy/feerate.h>
-#include <policy/fees/block_policy_estimator.h>
+#include <policy/fees.h>
 #include <primitives/transaction.h>
 #include <script/keyorigin.h>
 #include <script/signingprovider.h>
@@ -20,8 +20,6 @@
 namespace wallet {
 const int DEFAULT_MIN_DEPTH = 0;
 const int DEFAULT_MAX_DEPTH = 9999999;
-
-const int DEFAULT_WALLET_TX_VERSION = CTransaction::CURRENT_VERSION;
 
 //! Default for -avoidpartialspends
 static constexpr bool DEFAULT_AVOIDPARTIALSPENDS = false;
@@ -91,6 +89,8 @@ public:
     //! If true, the selection process can add extra unselected inputs from the wallet
     //! while requires all selected inputs be used
     bool m_allow_other_inputs = true;
+    //! Includes watch only addresses which are solvable
+    bool fAllowWatchOnly = false;
     //! Override automatic min/max checks on fee, m_feerate must be set if true
     bool fOverrideFeeRate = false;
     //! Override the wallet's m_pay_tx_fee if set
@@ -111,10 +111,10 @@ public:
     int m_max_depth = DEFAULT_MAX_DEPTH;
     //! SigningProvider that has pubkeys and scripts to do spend size estimation for external inputs
     FlatSigningProvider m_external_provider;
-    //! Version
-    uint32_t m_version = DEFAULT_WALLET_TX_VERSION;
     //! Locktime
     std::optional<uint32_t> m_locktime;
+    //! Version
+    std::optional<uint32_t> m_version;
     //! Caps weight of resulting tx
     std::optional<int> m_max_tx_weight{std::nullopt};
 
@@ -187,4 +187,4 @@ private:
 };
 } // namespace wallet
 
-#endif // BITCOIN_WALLET_COINCONTROL_H
+#endif // QTC_WALLET_COINCONTROL_H

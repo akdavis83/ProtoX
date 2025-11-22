@@ -1,9 +1,9 @@
-// Copyright (c) 2020-present The Bitcoin Core developers
+// Copyright (c) 2020-present The QTC Core developers
 // Distributed under the MIT software license, see the accompanying
 // file COPYING or http://www.opensource.org/licenses/mit-license.php.
 
-#ifndef BITCOIN_TEST_UTIL_NET_H
-#define BITCOIN_TEST_UTIL_NET_H
+#ifndef QTC_TEST_UTIL_NET_H
+#define QTC_TEST_UTIL_NET_H
 
 #include <compat/compat.h>
 #include <netmessagemaker.h>
@@ -45,9 +45,6 @@ struct ConnmanTestMsg : public CConnman {
         m_peer_connect_timeout = timeout;
     }
 
-    void ResetAddrCache();
-    void ResetMaxOutboundCycle();
-
     std::vector<CNode*> TestNodes()
     {
         LOCK(m_nodes_mutex);
@@ -71,24 +68,6 @@ struct ConnmanTestMsg : public CConnman {
         m_nodes.clear();
     }
 
-    void CreateNodeFromAcceptedSocketPublic(std::unique_ptr<Sock> sock,
-                                            NetPermissionFlags permissions,
-                                            const CAddress& addr_bind,
-                                            const CAddress& addr_peer)
-    {
-        CreateNodeFromAcceptedSocket(std::move(sock), permissions, addr_bind, addr_peer);
-    }
-
-    bool InitBindsPublic(const CConnman::Options& options)
-    {
-        return InitBinds(options);
-    }
-
-    void SocketHandlerPublic()
-    {
-        SocketHandler();
-    }
-
     void Handshake(CNode& node,
                    bool successfully_connected,
                    ServiceFlags remote_services,
@@ -107,7 +86,7 @@ struct ConnmanTestMsg : public CConnman {
     bool ReceiveMsgFrom(CNode& node, CSerializedNetMsg&& ser_msg) const;
     void FlushSendBuffer(CNode& node) const;
 
-    bool AlreadyConnectedToAddressPublic(const CNetAddr& addr) { return AlreadyConnectedToAddress(addr); };
+    bool AlreadyConnectedPublic(const CAddress& addr) { return AlreadyConnectedToAddress(addr); };
 
     CNode* ConnectNodePublic(PeerManager& peerman, const char* pszDest, ConnectionType conn_type)
         EXCLUSIVE_LOCKS_REQUIRED(!m_unused_i2p_sessions_mutex);
@@ -379,4 +358,4 @@ void DynSock::Pipe::PushNetMsg(const std::string& type, Args&&... payload)
 
 std::vector<NodeEvictionCandidate> GetRandomNodeEvictionCandidates(int n_candidates, FastRandomContext& random_context);
 
-#endif // BITCOIN_TEST_UTIL_NET_H
+#endif // QTC_TEST_UTIL_NET_H

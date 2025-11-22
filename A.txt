@@ -1,0 +1,8 @@
+As a blockchain security professional, do a Certik level audit of the QTC code base. IN                    │
+│   particular look at the new mining algorithm, the kyber1024 KEM + Dilithium3 signatures and                 │
+│   the new PQ P2P node structure. The goal is to make sure QTC has been fully transitioned from               │
+│   BTC to QTC and that all the new parts of the protocol are production grade, fully functional               │
+│   and operational. If there are any missing parts to a production grade blockchain protocol                  │
+│   please make a note of that so that it can be fixed later on. QTC is a quantum safe blockchain              │
+│   solution on every critical part of its infrastructure. All SHA has been changed to SHA3-512                │
+│   except for the witness hash which used SHA3-256 to get the 20 witness bytes. 

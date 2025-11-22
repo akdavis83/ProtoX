@@ -1,4 +1,4 @@
-// Copyright (c) 2023 The Bitcoin Core developers
+// Copyright (c) 2023 The QTC Core developers
 // Distributed under the MIT software license, see the accompanying
 // file COPYING or http://www.opensource.org/licenses/mit-license.php.
 
@@ -125,7 +125,7 @@ bool ArgsManager::ReadConfigFiles(std::string& error, bool ignore_invalid_keys)
         LOCK(cs_args);
         m_settings.ro_config.clear();
         m_config_sections.clear();
-        m_config_path = AbsPathForConfigVal(*this, GetPathArg("-conf", BITCOIN_CONF_FILENAME), /*net_specific=*/false);
+        m_config_path = AbsPathForConfigVal(*this, GetPathArg("-conf", QTC_CONF_FILENAME), /*net_specific=*/false);
     }
 
     const auto conf_path{GetConfigFilePath()};
@@ -135,7 +135,7 @@ bool ArgsManager::ReadConfigFiles(std::string& error, bool ignore_invalid_keys)
             error = strprintf("Config file \"%s\" is a directory.", fs::PathToString(conf_path));
             return false;
         }
-        stream = std::ifstream{conf_path.std_path()};
+        stream = std::ifstream{conf_path};
         // If the file is explicitly specified, it must be readable
         if (IsArgSet("-conf") && !stream.good()) {
             error = strprintf("specified config file \"%s\" could not be opened.", fs::PathToString(conf_path));
@@ -187,7 +187,7 @@ bool ArgsManager::ReadConfigFiles(std::string& error, bool ignore_invalid_keys)
                     error = strprintf("Included config file \"%s\" is a directory.", fs::PathToString(include_conf_path));
                     return false;
                 }
-                std::ifstream conf_file_stream{include_conf_path.std_path()};
+                std::ifstream conf_file_stream{include_conf_path};
                 if (conf_file_stream.good()) {
                     if (!ReadConfigStream(conf_file_stream, conf_file_name, error, ignore_invalid_keys)) {
                         return false;

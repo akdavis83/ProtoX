@@ -1,9 +1,9 @@
-// Copyright (c) 2015-present The Bitcoin Core developers
+// Copyright (c) 2015-present The QTC Core developers
 // Distributed under the MIT software license, see the accompanying
 // file COPYING or http://www.opensource.org/licenses/mit-license.php.
 
-#ifndef BITCOIN_PREVECTOR_H
-#define BITCOIN_PREVECTOR_H
+#ifndef QTC_PREVECTOR_H
+#define QTC_PREVECTOR_H
 
 #include <algorithm>
 #include <cassert>
@@ -38,8 +38,6 @@ class prevector {
     static_assert(std::is_trivially_copyable_v<T>);
 
 public:
-    static constexpr unsigned int STATIC_SIZE{N};
-
     typedef Size size_type;
     typedef Diff difference_type;
     typedef T value_type;
@@ -495,4 +493,4 @@ public:
     }
 };
 
-#endif // BITCOIN_PREVECTOR_H
+#endif // QTC_PREVECTOR_H

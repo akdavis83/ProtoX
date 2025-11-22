@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-# Copyright (c) 2017-2022 The Bitcoin Core developers
+# Copyright (c) 2017-2022 The Quantum Coin Core developers
 # Distributed under the MIT software license, see the accompanying
 # file COPYING or http://www.opensource.org/licenses/mit-license.php.
 """An example functional test
@@ -29,7 +29,7 @@ from test_framework.p2p import (
     msg_getdata,
     p2p_lock,
 )
-from test_framework.test_framework import BitcoinTestFramework
+from test_framework.test_framework import Quantum CoinTestFramework
 from test_framework.util import (
     assert_equal,
 )
@@ -57,7 +57,8 @@ class BaseNode(P2PInterface):
         """Override the standard on_block callback
 
         Store the hash of a received block in the dictionary."""
-        self.block_receive_map[message.block.hash_int] += 1
+        message.block.calc_sha256()
+        self.block_receive_map[message.block.sha256] += 1
 
     def on_inv(self, message):
         """Override the standard on_inv callback"""
@@ -68,12 +69,12 @@ def custom_function():
 
     If this function is more generally useful for other tests, consider
     moving it to a module in test_framework."""
-    # self.log.info("running custom_function")  # Oops! Can't run self.log outside the BitcoinTestFramework
+    # self.log.info("running custom_function")  # Oops! Can't run self.log outside the Quantum CoinTestFramework
     pass
 
 
-class ExampleTest(BitcoinTestFramework):
-    # Each functional test is a subclass of the BitcoinTestFramework class.
+class ExampleTest(Quantum CoinTestFramework):
+    # Each functional test is a subclass of the Quantum CoinTestFramework class.
 
     # Override the set_test_params(), skip_test_if_missing_module(), add_options(), setup_chain(), setup_network()
     # and setup_nodes() methods to customize the test setup as required.
@@ -136,7 +137,7 @@ class ExampleTest(BitcoinTestFramework):
 
         Define it in a method here because you're going to use it repeatedly.
         If you think it's useful in general, consider moving it to the base
-        BitcoinTestFramework class so other tests can use it."""
+        Quantum CoinTestFramework class so other tests can use it."""
 
         self.log.info("Running custom_method")
 
@@ -181,7 +182,7 @@ class ExampleTest(BitcoinTestFramework):
             block_message = msg_block(block)
             # Send message is used to send a P2P message to the node over our P2PInterface
             peer_messaging.send_without_ping(block_message)
-            self.tip = block.hash_int
+            self.tip = block.sha256
             blocks.append(self.tip)
             self.block_time += 1
             height += 1

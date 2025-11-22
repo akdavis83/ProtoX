@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-# Copyright (c) 2024-Present The Bitcoin Core developers
+# Copyright (c) 2024-Present The Quantum Coin Core developers
 # Distributed under the MIT software license, see the accompanying
 # file COPYING or http://www.opensource.org/licenses/mit-license.php.
 """Test getblocktemplate RPC in proposal mode
@@ -17,7 +17,7 @@ from test_framework.blocktools import (
     add_witness_commitment,
 )
 
-from test_framework.test_framework import BitcoinTestFramework
+from test_framework.test_framework import Quantum CoinTestFramework
 from test_framework.util import (
     assert_equal,
     assert_raises_rpc_error,
@@ -52,7 +52,7 @@ def assert_template(node, block, expect, *, rehash=True, submit=True, solve=True
             block.solve()
         assert_equal(node.submitblock(block.serialize().hex()), expect_submit)
 
-class MiningTemplateVerificationTest(BitcoinTestFramework):
+class MiningTemplateVerificationTest(Quantum CoinTestFramework):
 
     def set_test_params(self):
         self.num_nodes = 1
@@ -156,8 +156,9 @@ class MiningTemplateVerificationTest(BitcoinTestFramework):
         self.log.info("Generate a block")
         target = uint256_from_compact(block.nBits)
         # Ensure that it doesn't meet the target by coincidence
-        while block.hash_int <= target:
+        while block.sha256 <= target:
             block.nNonce += 1
+            block.rehash()
         self.log.debug("Found a nonce")
 
         self.log.info("A block template doesn't need PoW")

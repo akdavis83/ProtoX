@@ -1,9 +1,9 @@
-# Copyright (c) 2023-present The Bitcoin Core developers
+# Copyright (c) 2023-present The Quantum Coin Core developers
 # Distributed under the MIT software license, see the accompanying
 # file COPYING or https://opensource.org/license/mit/.
 
-add_executable(bench_bitcoin
-  bench_bitcoin.cpp
+add_executable(bench_qtc
+  bench_qtc.cpp
   bench.cpp
   nanobench.cpp
 # Benchmarks:
@@ -12,7 +12,6 @@ add_executable(bench_bitcoin
   bech32.cpp
   bip324_ecdh.cpp
   block_assemble.cpp
-  blockencodings.cpp
   ccoins_caching.cpp
   chacha20.cpp
   checkblock.cpp
@@ -36,7 +35,6 @@ add_executable(bench_bitcoin
   mempool_eviction.cpp
   mempool_stress.cpp
   merkle_root.cpp
-  obfuscation.cpp
   parse_hex.cpp
   peer_eviction.cpp
   poly1305.cpp
@@ -50,28 +48,25 @@ add_executable(bench_bitcoin
   sign_transaction.cpp
   streams_findbyte.cpp
   strencodings.cpp
-  txgraph.cpp
-  txorphanage.cpp
   util_time.cpp
   verify_script.cpp
+  xor.cpp
 )
 
-add_windows_application_manifest(bench_bitcoin)
-
 include(TargetDataSources)
-target_raw_data_sources(bench_bitcoin NAMESPACE benchmark::data
+target_raw_data_sources(bench_qtc NAMESPACE benchmark::data
   data/block413567.raw
 )
 
-target_link_libraries(bench_bitcoin
+target_link_libraries(bench_qtc
   core_interface
   test_util
-  bitcoin_node
+  qtc_node
   Boost::headers
 )
 
 if(ENABLE_WALLET)
-  target_sources(bench_bitcoin
+  target_sources(bench_qtc
     PRIVATE
       coin_selection.cpp
       wallet_balance.cpp
@@ -81,11 +76,11 @@ if(ENABLE_WALLET)
       wallet_ismine.cpp
       wallet_migration.cpp
   )
-  target_link_libraries(bench_bitcoin bitcoin_wallet)
+  target_link_libraries(bench_qtc qtc_wallet)
 endif()
 
 add_test(NAME bench_sanity_check
-  COMMAND bench_bitcoin -sanity-check
+  COMMAND bench_qtc -sanity-check
 )
 
-install_binary_component(bench_bitcoin INTERNAL)
+install_binary_component(bench_qtc)

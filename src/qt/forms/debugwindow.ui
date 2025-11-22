@@ -573,7 +573,7 @@
         </layout>
        </item>
        <item>
-        <widget class="PlainCopyTextEdit" name="messagesWidget">
+        <widget class="QTextEdit" name="messagesWidget">
          <property name="minimumSize">
           <size>
            <width>0</width>
@@ -1867,10 +1867,6 @@
    <slots>
     <slot>clear()</slot>
    </slots>
-  </customwidget>
-  <customwidget>
-   <class>PlainCopyTextEdit</class>
-   <extends>QTextEdit</extends>
   </customwidget>
  </customwidgets>
  <resources>

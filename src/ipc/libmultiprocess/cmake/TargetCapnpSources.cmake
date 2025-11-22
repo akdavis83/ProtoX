@@ -1,4 +1,4 @@
-# Copyright (c) 2024-present The Bitcoin Core developers
+# Copyright (c) 2024-present The Quantum Coin Core developers
 # Distributed under the MIT software license, see the accompanying
 # file COPYING or https://opensource.org/license/mit/.
 
@@ -81,8 +81,6 @@ function(target_capnp_sources target include_prefix)
       DEPENDS ${capnp_file}
       VERBATIM
     )
-    # Skip linting for capnp-generated files but keep it for mpgen-generated ones
-    set_source_files_properties(${capnp_file}.c++ PROPERTIES SKIP_LINTING TRUE) # Ignored before cmake 3.27
     target_sources(${target} PRIVATE
       ${CMAKE_CURRENT_BINARY_DIR}/${capnp_file}.c++
       ${CMAKE_CURRENT_BINARY_DIR}/${capnp_file}.proxy-client.c++

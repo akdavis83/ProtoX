@@ -1,4 +1,4 @@
-// Copyright (c) 2021 The Bitcoin Core developers
+// Copyright (c) 2021 The QTC Core developers
 // Distributed under the MIT software license, see the accompanying
 // file COPYING or http://www.opensource.org/licenses/mit-license.php.
 
@@ -13,14 +13,8 @@ bool CWalletTx::IsEquivalentTo(const CWalletTx& _tx) const
 {
         CMutableTransaction tx1 {*this->tx};
         CMutableTransaction tx2 {*_tx.tx};
-        for (auto& txin : tx1.vin) {
-            txin.scriptSig = CScript();
-            txin.scriptWitness.SetNull();
-        }
-        for (auto& txin : tx2.vin) {
-            txin.scriptSig = CScript();
-            txin.scriptWitness.SetNull();
-        }
+        for (auto& txin : tx1.vin) txin.scriptSig = CScript();
+        for (auto& txin : tx2.vin) txin.scriptSig = CScript();
         return CTransaction(tx1) == CTransaction(tx2);
 }
 

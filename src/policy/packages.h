@@ -1,9 +1,9 @@
-// Copyright (c) 2021-2022 The Bitcoin Core developers
+// Copyright (c) 2021-2022 The QTC Core developers
 // Distributed under the MIT software license, see the accompanying
 // file COPYING or http://www.opensource.org/licenses/mit-license.php.
 
-#ifndef BITCOIN_POLICY_PACKAGES_H
-#define BITCOIN_POLICY_PACKAGES_H
+#ifndef QTC_POLICY_PACKAGES_H
+#define QTC_POLICY_PACKAGES_H
 
 #include <consensus/consensus.h>
 #include <consensus/validation.h>
@@ -26,7 +26,7 @@ static_assert(MAX_PACKAGE_WEIGHT >= MAX_STANDARD_TX_WEIGHT);
 
 // If a package is to be evaluated, it must be at least as large as the mempool's ancestor/descendant limits,
 // otherwise transactions that would be individually accepted may be rejected in a package erroneously.
-// Since a submitted package must be child-with-parents (all of the transactions are a parent
+// Since a submitted package must be child-with-unconfirmed-parents (all of the transactions are an ancestor
 // of the child), package limits are ultimately bounded by mempool package limits. Ensure that the
 // defaults reflect this constraint.
 static_assert(DEFAULT_DESCENDANT_LIMIT >= MAX_PACKAGE_COUNT);
@@ -94,4 +94,4 @@ bool IsChildWithParentsTree(const Package& package);
  */
 uint256 GetPackageHash(const std::vector<CTransactionRef>& transactions);
 
-#endif // BITCOIN_POLICY_PACKAGES_H
+#endif // QTC_POLICY_PACKAGES_H

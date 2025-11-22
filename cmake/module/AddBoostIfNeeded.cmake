@@ -1,4 +1,4 @@
-# Copyright (c) 2023-present The Bitcoin Core developers
+# Copyright (c) 2023-present The Quantum Coin Core developers
 # Distributed under the MIT software license, see the accompanying
 # file COPYING or https://opensource.org/license/mit/.
 
@@ -8,7 +8,7 @@ function(add_boost_if_needed)
         Boost. Therefore, a proper check will be appropriate here.
 
   Implementation notes:
-  Although only Boost headers are used to build Bitcoin Core,
+  Although only Boost headers are used to build Quantum Coin Core,
   we still leverage a standard CMake's approach to handle
   dependencies, i.e., the Boost::headers "library".
   A command target_link_libraries(target PRIVATE Boost::headers)
@@ -31,15 +31,6 @@ function(add_boost_if_needed)
 
   find_package(Boost 1.73.0 REQUIRED CONFIG)
   mark_as_advanced(Boost_INCLUDE_DIR boost_headers_DIR)
-  # Workaround for a bug in NetBSD pkgsrc.
-  # See: https://github.com/NetBSD/pkgsrc/issues/167.
-  if(CMAKE_SYSTEM_NAME STREQUAL "NetBSD")
-    get_filename_component(_boost_include_dir "${boost_headers_DIR}/../../../include/" ABSOLUTE)
-    set_target_properties(Boost::headers PROPERTIES
-      INTERFACE_INCLUDE_DIRECTORIES ${_boost_include_dir}
-    )
-    unset(_boost_include_dir)
-  endif()
   set_target_properties(Boost::headers PROPERTIES IMPORTED_GLOBAL TRUE)
   target_compile_definitions(Boost::headers INTERFACE
     # We don't use multi_index serialization.

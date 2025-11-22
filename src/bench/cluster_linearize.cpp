@@ -1,4 +1,4 @@
-// Copyright (c) The Bitcoin Core developers
+// Copyright (c) The QTC Core developers
 // Distributed under the MIT software license, see the accompanying
 // file COPYING or http://www.opensource.org/licenses/mit-license.php.
 
@@ -229,8 +229,8 @@ void BenchLinearizeOptimally(benchmark::Bench& bench, const std::array<uint8_t, 
         reader >> Using<DepGraphFormatter>(depgraph);
         uint64_t rng_seed = 0;
         bench.run([&] {
-            auto [_lin, optimal, _cost] = Linearize(depgraph, /*max_iterations=*/10000000, rng_seed++);
-            assert(optimal);
+            auto res = Linearize(depgraph, /*max_iterations=*/10000000, rng_seed++);
+            assert(res.second);
         });
     };
 

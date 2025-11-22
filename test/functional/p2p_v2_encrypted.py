@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-# Copyright (c) 2022 The Bitcoin Core developers
+# Copyright (c) 2022 The Quantum Coin Core developers
 # Distributed under the MIT software license, see the accompanying
 # file COPYING or http://www.opensource.org/licenses/mit-license.php.
 """
@@ -13,7 +13,7 @@ from test_framework.p2p import (
     P2PDataStore,
     P2PInterface,
 )
-from test_framework.test_framework import BitcoinTestFramework
+from test_framework.test_framework import Quantum CoinTestFramework
 from test_framework.util import (
     assert_equal,
     assert_greater_than,
@@ -22,7 +22,7 @@ from test_framework.util import (
 from test_framework.crypto.chacha20 import REKEY_INTERVAL
 
 
-class P2PEncrypted(BitcoinTestFramework):
+class P2PEncrypted(Quantum CoinTestFramework):
     def set_test_params(self):
         self.num_nodes = 2
         self.extra_args = [["-v2transport=1"], ["-v2transport=1"]]
@@ -41,7 +41,7 @@ class P2PEncrypted(BitcoinTestFramework):
             block = create_block(tip, create_coinbase(tipheight + 1), last_block_time + 1)
             block.solve()
             test_blocks.append(block)
-            tip = block.hash_int
+            tip = block.sha256
             tipheight += 1
             last_block_time += 1
         return test_blocks

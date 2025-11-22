@@ -1,9 +1,9 @@
-// Copyright (c) 2022 The Bitcoin Core developers
+// Copyright (c) 2022 The QTC Core developers
 // Distributed under the MIT software license, see the accompanying
 // file COPYING or http://www.opensource.org/licenses/mit-license.php.
 
-#ifndef BITCOIN_POLICY_TRUC_POLICY_H
-#define BITCOIN_POLICY_TRUC_POLICY_H
+#ifndef QTC_POLICY_TRUC_POLICY_H
+#define QTC_POLICY_TRUC_POLICY_H
 
 #include <consensus/amount.h>
 #include <policy/packages.h>
@@ -28,10 +28,8 @@ static constexpr unsigned int TRUC_ANCESTOR_LIMIT{2};
 
 /** Maximum sigop-adjusted virtual size of all v3 transactions. */
 static constexpr int64_t TRUC_MAX_VSIZE{10000};
-static constexpr int64_t TRUC_MAX_WEIGHT{TRUC_MAX_VSIZE * WITNESS_SCALE_FACTOR};
 /** Maximum sigop-adjusted virtual size of a tx which spends from an unconfirmed TRUC transaction. */
 static constexpr int64_t TRUC_CHILD_MAX_VSIZE{1000};
-static constexpr int64_t TRUC_CHILD_MAX_WEIGHT{TRUC_CHILD_MAX_VSIZE * WITNESS_SCALE_FACTOR};
 // These limits are within the default ancestor/descendant limits.
 static_assert(TRUC_MAX_VSIZE + TRUC_CHILD_MAX_VSIZE <= DEFAULT_ANCESTOR_SIZE_LIMIT_KVB * 1000);
 static_assert(TRUC_MAX_VSIZE + TRUC_CHILD_MAX_VSIZE <= DEFAULT_DESCENDANT_SIZE_LIMIT_KVB * 1000);
@@ -93,4 +91,4 @@ std::optional<std::string> PackageTRUCChecks(const CTransactionRef& ptx, int64_t
                                            const Package& package,
                                            const CTxMemPool::setEntries& mempool_ancestors);
 
-#endif // BITCOIN_POLICY_TRUC_POLICY_H
+#endif // QTC_POLICY_TRUC_POLICY_H

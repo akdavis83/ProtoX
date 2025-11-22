@@ -1,4 +1,4 @@
-// Copyright (c) 2021-2022 The Bitcoin Core developers
+// Copyright (c) 2021-2022 The QTC Core developers
 // Distributed under the MIT software license, see the accompanying
 // file COPYING or http://www.opensource.org/licenses/mit-license.php.
 
@@ -13,7 +13,6 @@
 #include <tinyformat.h>
 #include <util/fs.h>
 
-#include <csignal>
 #include <cstdio>
 #include <cstdlib>
 #include <cstring>
@@ -27,28 +26,6 @@
 
 namespace ipc {
 namespace {
-#ifndef WIN32
-std::string g_ignore_ctrl_c;
-
-void HandleCtrlC(int)
-{
-    // (void)! needed to suppress -Wunused-result warning from GCC
-    (void)!write(STDOUT_FILENO, g_ignore_ctrl_c.data(), g_ignore_ctrl_c.size());
-}
-#endif
-
-void IgnoreCtrlC(std::string message)
-{
-#ifndef WIN32
-    g_ignore_ctrl_c = std::move(message);
-    struct sigaction sa{};
-    sa.sa_handler = HandleCtrlC;
-    sigemptyset(&sa.sa_mask);
-    sa.sa_flags = SA_RESTART;
-    sigaction(SIGINT, &sa, nullptr);
-#endif
-}
-
 class IpcImpl : public interfaces::Ipc
 {
 public:
@@ -76,7 +53,6 @@ public:
         if (!m_process->checkSpawned(argc, argv, fd)) {
             return false;
         }
-        IgnoreCtrlC(strprintf("[%s] SIGINT received — waiting for parent to shut down.\n", m_exe_name));
         m_protocol->serve(fd, m_exe_name, m_init);
         exit_status = EXIT_SUCCESS;
         return true;
@@ -89,10 +65,10 @@ public:
             // Treat "auto" the same as "unix" except don't treat it an as error
             // if the connection is not accepted. Just return null so the caller
             // can work offline without a connection, or spawn a new
-            // bitcoin-node process and connect to it.
+            // qtc-node process and connect to it.
             address = "unix";
             try {
-                fd = m_process->connect(gArgs.GetDataDirNet(), "bitcoin-node", address);
+                fd = m_process->connect(gArgs.GetDataDirNet(), "qtc-node", address);
             } catch (const std::system_error& e) {
                 // If connection type is auto and socket path isn't accepting connections, or doesn't exist, catch the error and return null;
                 if (e.code() == std::errc::connection_refused || e.code() == std::errc::no_such_file_or_directory) {
@@ -101,7 +77,7 @@ public:
                 throw;
             }
         } else {
-            fd = m_process->connect(gArgs.GetDataDirNet(), "bitcoin-node", address);
+            fd = m_process->connect(gArgs.GetDataDirNet(), "qtc-node", address);
         }
         return m_protocol->connect(fd, m_exe_name);
     }
@@ -109,10 +85,6 @@ public:
     {
         int fd = m_process->bind(gArgs.GetDataDirNet(), m_exe_name, address);
         m_protocol->listen(fd, m_exe_name, m_init);
-    }
-    void disconnectIncoming() override
-    {
-        m_protocol->disconnectIncoming();
     }
     void addCleanup(std::type_index type, void* iface, std::function<void()> cleanup) override
     {

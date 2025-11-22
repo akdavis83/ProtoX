@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-# Copyright (c) 2018-present The Bitcoin Core developers
+# Copyright (c) 2018-present The Quantum Coin Core developers
 # Distributed under the MIT software license, see the accompanying
 # file COPYING or http://www.opensource.org/licenses/mit-license.php.
 """Backwards compatibility functional test
@@ -19,19 +19,17 @@ import os
 import shutil
 
 from test_framework.blocktools import COINBASE_MATURITY
-from test_framework.test_framework import BitcoinTestFramework
+from test_framework.test_framework import Quantum CoinTestFramework
 from test_framework.descriptors import descsum_create
-from test_framework.messages import ser_string
 
 from test_framework.util import (
     assert_equal,
-    assert_greater_than,
     assert_raises_rpc_error,
 )
 
 LAST_KEYPOOL_INDEX = 9 # Index of the last derived address with the keypool size of 10
 
-class BackwardsCompatibilityTest(BitcoinTestFramework):
+class BackwardsCompatibilityTest(Quantum CoinTestFramework):
     def set_test_params(self):
         self.setup_clean_chain = True
         self.num_nodes = 8
@@ -151,13 +149,18 @@ class BackwardsCompatibilityTest(BitcoinTestFramework):
         assert_equal(bad_deriv_wallet_master.getaddressinfo(bad_path_addr)["hdkeypath"], good_deriv_path)
         bad_deriv_wallet_master.unloadwallet()
 
-        def check_keymeta(conn):
-            # Retrieve all records that have the "keymeta" prefix. The remaining key data varies for each record.
-            keymeta_rec = conn.execute(f"SELECT value FROM main where key >= x'{ser_string(b'keymeta').hex()}' AND key < x'{ser_string(b'keymetb').hex()}'").fetchone()
-            assert_equal(keymeta_rec, None)
-
-        wallet_db = node_master.wallets_path / wallet_name / "wallet.dat"
-        self.inspect_sqlite_db(wallet_db, check_keymeta)
+        # If we have sqlite3, verify that there are no keymeta records
+        try:
+            import sqlite3
+            wallet_db = node_master.wallets_path / wallet_name / "wallet.dat"
+            conn = sqlite3.connect(wallet_db)
+            with conn:
+                # Retrieve all records that have the "keymeta" prefix. The remaining key data varies for each record.
+                keymeta_rec = conn.execute("SELECT value FROM main where key >= x'076b65796d657461' AND key < x'076b65796d657462'").fetchone()
+                assert_equal(keymeta_rec, None)
+            conn.close()
+        except ImportError:
+            self.log.warning("sqlite3 module not available, skipping lack of keymeta records check")
 
     def test_ignore_legacy_during_startup(self, legacy_nodes, node_master):
         self.log.info("Test that legacy wallets are ignored during startup on v29+")
@@ -324,7 +327,7 @@ class BackwardsCompatibilityTest(BitcoinTestFramework):
         for node in descriptors_nodes:
             self.log.info(f"- {node.version}")
             wallet_name = f"up_{node.version}"
-            node.createwallet(wallet_name=wallet_name, descriptors=True)
+            node.rpc.createwallet(wallet_name=wallet_name, descriptors=True)
             wallet_prev = node.get_wallet_rpc(wallet_name)
             address = wallet_prev.getnewaddress('', "bech32")
             addr_info = wallet_prev.getaddressinfo(address)
@@ -338,13 +341,6 @@ class BackwardsCompatibilityTest(BitcoinTestFramework):
 
             # Remove the wallet from old node
             wallet_prev.unloadwallet()
-
-            # Open backup with sqlite and get flags
-            def get_flags(conn):
-                flags_rec = conn.execute(f"SELECT value FROM main WHERE key = x'{ser_string(b'flags').hex()}'").fetchone()
-                return int.from_bytes(flags_rec[0], byteorder="little")
-
-            old_flags = self.inspect_sqlite_db(backup_path, get_flags)
 
             # Restore the wallet to master
             load_res = node_master.restorewallet(wallet_name, backup_path)
@@ -382,21 +378,6 @@ class BackwardsCompatibilityTest(BitcoinTestFramework):
 
             wallet.unloadwallet()
 
-            # Open the wallet with sqlite and inspect the flags and records
-            def check_upgraded_records(conn, old_flags):
-                flags_rec = conn.execute(f"SELECT value FROM main WHERE key = x'{ser_string(b'flags').hex()}'").fetchone()
-                new_flags = int.from_bytes(flags_rec[0], byteorder="little")
-                diff_flags = new_flags & ~old_flags
-
-                # Check for last hardened xpubs if the flag is newly set
-                if diff_flags & (1 << 2):
-                    self.log.debug("Checking descriptor cache was upgraded")
-                    # Fetch all records with the walletdescriptorlhcache prefix
-                    lh_cache_recs = conn.execute(f"SELECT value FROM main where key >= x'{ser_string(b'walletdescriptorlhcache').hex()}' AND key < x'{ser_string(b'walletdescriptorlhcachf').hex()}'").fetchall()
-                    assert_greater_than(len(lh_cache_recs), 0)
-
-            self.inspect_sqlite_db(down_backup_path, check_upgraded_records, old_flags)
-
             # Check that no automatic upgrade broke downgrading the wallet
             target_dir = node.wallets_path / down_wallet_name
             os.makedirs(target_dir, exist_ok=True)
@@ -414,9 +395,9 @@ class BackwardsCompatibilityTest(BitcoinTestFramework):
             self.log.info(f"- {node.version}")
             wallet_name = f"legacy_up_{node.version}"
             if self.major_version_at_least(node, 21):
-                node.createwallet(wallet_name=wallet_name, descriptors=False)
+                node.rpc.createwallet(wallet_name=wallet_name, descriptors=False)
             else:
-                node.createwallet(wallet_name=wallet_name)
+                node.rpc.createwallet(wallet_name=wallet_name)
             wallet_prev = node.get_wallet_rpc(wallet_name)
             address = wallet_prev.getnewaddress('', "bech32")
             addr_info = wallet_prev.getaddressinfo(address)

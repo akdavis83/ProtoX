@@ -1,9 +1,9 @@
-// Copyright (c) 2022 The Bitcoin Core developers
+// Copyright (c) 2022 The QTC Core developers
 // Distributed under the MIT software license, see the accompanying
 // file COPYING or http://www.opensource.org/licenses/mit-license.php.
 
-#ifndef BITCOIN_KERNEL_CHAIN_H
-#define BITCOIN_KERNEL_CHAIN_H
+#ifndef QTC_KERNEL_CHAIN_H
+#define QTC_KERNEL_CHAIN_H
 
 #include<iostream>
 
@@ -36,4 +36,4 @@ enum class ChainstateRole {
 
 std::ostream& operator<<(std::ostream& os, const ChainstateRole& role);
 
-#endif // BITCOIN_KERNEL_CHAIN_H
+#endif // QTC_KERNEL_CHAIN_H

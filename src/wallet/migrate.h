@@ -1,9 +1,9 @@
-// Copyright (c) 2021-present The Bitcoin Core developers
+// Copyright (c) 2021-present The QTC Core developers
 // Distributed under the MIT software license, see the accompanying
 // file COPYING or http://www.opensource.org/licenses/mit-license.php.
 
-#ifndef BITCOIN_WALLET_MIGRATE_H
-#define BITCOIN_WALLET_MIGRATE_H
+#ifndef QTC_WALLET_MIGRATE_H
+#define QTC_WALLET_MIGRATE_H
 
 #include <wallet/db.h>
 
@@ -35,9 +35,9 @@ public:
     /** Open the database if it is not already opened. */
     void Open() override;
 
-    /** Rewrite the entire database on disk
+    /** Rewrite the entire database on disk, with the exception of key pszSkip if non-zero
      */
-    bool Rewrite() override { return false; }
+    bool Rewrite(const char* pszSkip = nullptr) override { return false; }
 
     /** Back up the entire database to a file.
      */
@@ -50,7 +50,6 @@ public:
 
     /** Return path to main database file for logs and error messages. */
     std::string Filename() override { return fs::PathToString(m_filepath); }
-    std::vector<fs::path> Files() override { return {m_filepath}; }
 
     std::string Format() override { return "bdb_ro"; }
 
@@ -107,4 +106,4 @@ public:
 std::unique_ptr<BerkeleyRODatabase> MakeBerkeleyRODatabase(const fs::path& path, const DatabaseOptions& options, DatabaseStatus& status, bilingual_str& error);
 } // namespace wallet
 
-#endif // BITCOIN_WALLET_MIGRATE_H
+#endif // QTC_WALLET_MIGRATE_H

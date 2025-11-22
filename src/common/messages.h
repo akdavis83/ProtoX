@@ -1,5 +1,5 @@
 // Copyright (c) 2009-2010 Satoshi Nakamoto
-// Copyright (c) 2009-2020 The Bitcoin Core developers
+// Copyright (c) 2009-2020 The QTC Core developers
 // Distributed under the MIT software license, see the accompanying
 // file COPYING or http://www.opensource.org/licenses/mit-license.php.
 
@@ -8,11 +8,10 @@
 //! messages, and are called in different parts of the codebase across
 //! node/wallet/gui boundaries.
 
-#ifndef BITCOIN_COMMON_MESSAGES_H
-#define BITCOIN_COMMON_MESSAGES_H
+#ifndef QTC_COMMON_MESSAGES_H
+#define QTC_COMMON_MESSAGES_H
 
 #include <string>
-#include <string_view>
 
 struct bilingual_str;
 
@@ -24,7 +23,7 @@ enum class TransactionError;
 
 namespace common {
 enum class PSBTError;
-bool FeeModeFromString(std::string_view mode_string, FeeEstimateMode& fee_estimate_mode);
+bool FeeModeFromString(const std::string& mode_string, FeeEstimateMode& fee_estimate_mode);
 std::string StringForFeeReason(FeeReason reason);
 std::string FeeModes(const std::string& delimiter);
 std::string FeeModeInfo(std::pair<std::string, FeeEstimateMode>& mode);
@@ -38,4 +37,4 @@ bilingual_str AmountHighWarn(const std::string& optname);
 bilingual_str AmountErrMsg(const std::string& optname, const std::string& strValue);
 } // namespace common
 
-#endif // BITCOIN_COMMON_MESSAGES_H
+#endif // QTC_COMMON_MESSAGES_H

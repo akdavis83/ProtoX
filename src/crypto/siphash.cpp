@@ -1,14 +1,10 @@
-// Copyright (c) 2016-present The Bitcoin Core developers
+// Copyright (c) 2016-present The QTC Core developers
 // Distributed under the MIT software license, see the accompanying
 // file COPYING or http://www.opensource.org/licenses/mit-license.php.
 
 #include <crypto/siphash.h>
 
-#include <uint256.h>
-
 #include <bit>
-#include <cassert>
-#include <span>
 
 #define SIPROUND do { \
     v0 += v1; v1 = std::rotl(v1, 13); v1 ^= v0; \

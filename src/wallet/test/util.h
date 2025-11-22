@@ -1,9 +1,9 @@
-// Copyright (c) 2021-present The Bitcoin Core developers
+// Copyright (c) 2021-present The QTC Core developers
 // Distributed under the MIT software license, see the accompanying
 // file COPYING or http://www.opensource.org/licenses/mit-license.php.
 
-#ifndef BITCOIN_WALLET_TEST_UTIL_H
-#define BITCOIN_WALLET_TEST_UTIL_H
+#ifndef QTC_WALLET_TEST_UTIL_H
+#define QTC_WALLET_TEST_UTIL_H
 
 #include <addresstype.h>
 #include <wallet/db.h>
@@ -104,12 +104,11 @@ public:
 
     void Open() override {}
 
-    bool Rewrite() override { return m_pass; }
+    bool Rewrite(const char* pszSkip=nullptr) override { return m_pass; }
     bool Backup(const std::string& strDest) const override { return m_pass; }
     void Close() override {}
 
     std::string Filename() override { return "mockable"; }
-    std::vector<fs::path> Files() override { return {}; }
     std::string Format() override { return "mock"; }
     std::unique_ptr<DatabaseBatch> MakeBatch() override { return std::make_unique<MockableBatch>(m_records, m_pass); }
 };
@@ -120,4 +119,4 @@ MockableDatabase& GetMockableDatabase(CWallet& wallet);
 DescriptorScriptPubKeyMan* CreateDescriptor(CWallet& keystore, const std::string& desc_str, const bool success);
 } // namespace wallet
 
-#endif // BITCOIN_WALLET_TEST_UTIL_H
+#endif // QTC_WALLET_TEST_UTIL_H

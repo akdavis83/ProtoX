@@ -1,11 +1,11 @@
 #!/usr/bin/env python3
-# Copyright (c) 2019-2022 The Bitcoin Core developers
+# Copyright (c) 2019-2022 The Quantum Coin Core developers
 # Distributed under the MIT software license, see the accompanying
 # file COPYING or http://www.opensource.org/licenses/mit-license.php.
 """Test getdescriptorinfo RPC.
 """
 
-from test_framework.test_framework import BitcoinTestFramework
+from test_framework.test_framework import Quantum CoinTestFramework
 from test_framework.descriptors import descsum_create
 from test_framework.util import (
     assert_equal,
@@ -14,7 +14,7 @@ from test_framework.util import (
 from test_framework.wallet_util import generate_keypair
 
 
-class DescriptorTest(BitcoinTestFramework):
+class DescriptorTest(Quantum CoinTestFramework):
     def set_test_params(self):
         self.num_nodes = 1
         self.extra_args = [["-disablewallet"]]
@@ -35,9 +35,7 @@ class DescriptorTest(BitcoinTestFramework):
 
     def run_test(self):
         assert_raises_rpc_error(-1, 'getdescriptorinfo', self.nodes[0].getdescriptorinfo)
-        # cli handles wrong types differently
-        if not self.options.usecli:
-            assert_raises_rpc_error(-3, 'JSON value of type number is not of expected type string', self.nodes[0].getdescriptorinfo, 1)
+        assert_raises_rpc_error(-3, 'JSON value of type number is not of expected type string', self.nodes[0].getdescriptorinfo, 1)
         assert_raises_rpc_error(-5, "'' is not a valid descriptor function", self.nodes[0].getdescriptorinfo, "")
         assert_raises_rpc_error(-5, "pk(): Key ' 0279be667ef9dcbbac55a06295ce870b07029bfcdb2dce28d959f2815b16f81798' is invalid due to whitespace", self.nodes[0].getdescriptorinfo, "pk( 0279be667ef9dcbbac55a06295ce870b07029bfcdb2dce28d959f2815b16f81798)")
         assert_raises_rpc_error(-5, "pk(): Key '0279be667ef9dcbbac55a06295ce870b07029bfcdb2dce28d959f2815b16f81798 ' is invalid due to whitespace", self.nodes[0].getdescriptorinfo, "pk(0279be667ef9dcbbac55a06295ce870b07029bfcdb2dce28d959f2815b16f81798 )")

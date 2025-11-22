@@ -1,10 +1,10 @@
 // Copyright (c) 2009-2010 Satoshi Nakamoto
-// Copyright (c) 2009-present The Bitcoin Core developers
+// Copyright (c) 2009-present The QTC Core developers
 // Distributed under the MIT software license, see the accompanying
 // file COPYING or http://www.opensource.org/licenses/mit-license.php.
 
-#ifndef BITCOIN_VALIDATIONINTERFACE_H
-#define BITCOIN_VALIDATIONINTERFACE_H
+#ifndef QTC_VALIDATIONINTERFACE_H
+#define QTC_VALIDATIONINTERFACE_H
 
 #include <kernel/chain.h>
 #include <kernel/cs_main.h>
@@ -115,6 +115,7 @@ protected:
     virtual void MempoolTransactionsRemovedForBlock(const std::vector<RemovedMempoolTransactionInfo>& txs_removed_for_block, unsigned int nBlockHeight) {}
     /**
      * Notifies listeners of a block being connected.
+     * Provides a vector of transactions evicted from the mempool as a result.
      *
      * Called on a background thread.
      */
@@ -150,7 +151,7 @@ protected:
      * is guaranteed to be the current best block at the time the
      * callback was generated (not necessarily now).
      */
-    virtual void BlockChecked(const std::shared_ptr<const CBlock>&, const BlockValidationState&) {}
+    virtual void BlockChecked(const CBlock&, const BlockValidationState&) {}
     /**
      * Notifies listeners that a block which builds directly on our current tip
      * has been received and connected to the headers tree, though not validated yet.
@@ -224,8 +225,8 @@ public:
     void BlockConnected(ChainstateRole, const std::shared_ptr<const CBlock> &, const CBlockIndex *pindex);
     void BlockDisconnected(const std::shared_ptr<const CBlock> &, const CBlockIndex* pindex);
     void ChainStateFlushed(ChainstateRole, const CBlockLocator &);
-    void BlockChecked(const std::shared_ptr<const CBlock>&, const BlockValidationState&);
+    void BlockChecked(const CBlock&, const BlockValidationState&);
     void NewPoWValidBlock(const CBlockIndex *, const std::shared_ptr<const CBlock>&);
 };
 
-#endif // BITCOIN_VALIDATIONINTERFACE_H
+#endif // QTC_VALIDATIONINTERFACE_H

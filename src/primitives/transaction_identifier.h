@@ -1,9 +1,14 @@
-// Copyright (c) 2023-present The Bitcoin Core developers
+// Copyright (c) 2023-present The QTC Core developers
 // Distributed under the MIT software license, see the accompanying
 // file COPYING or https://opensource.org/license/mit.
 
+<<<<<<< Updated upstream:src/primitives/transaction_identifier.h
 #ifndef BITCOIN_PRIMITIVES_TRANSACTION_IDENTIFIER_H
 #define BITCOIN_PRIMITIVES_TRANSACTION_IDENTIFIER_H
+=======
+#ifndef QTC_UTIL_TRANSACTION_IDENTIFIER_H
+#define QTC_UTIL_TRANSACTION_IDENTIFIER_H
+>>>>>>> Stashed changes:src/util/transaction_identifier.h
 
 #include <attributes.h>
 #include <uint256.h>
@@ -69,6 +74,7 @@ using Txid = transaction_identifier<false>;
 /** Wtxid commits to all transaction fields including the witness. */
 using Wtxid = transaction_identifier<true>;
 
+<<<<<<< Updated upstream:src/primitives/transaction_identifier.h
 template <typename T>
 concept TxidOrWtxid = std::is_same_v<T, Txid> || std::is_same_v<T, Wtxid>;
 
@@ -92,3 +98,6 @@ public:
 };
 
 #endif // BITCOIN_PRIMITIVES_TRANSACTION_IDENTIFIER_H
+=======
+#endif // QTC_UTIL_TRANSACTION_IDENTIFIER_H
+>>>>>>> Stashed changes:src/util/transaction_identifier.h

@@ -1,5 +1,5 @@
 // Copyright (c) 2009-2010 Satoshi Nakamoto
-// Copyright (c) 2009-2022 The Bitcoin Core developers
+// Copyright (c) 2009-2022 The QTC Core developers
 // Distributed under the MIT software license, see the accompanying
 // file COPYING or http://www.opensource.org/licenses/mit-license.php.
 
@@ -17,7 +17,6 @@
 #include <util/task_runner.h>
 
 #include <future>
-#include <memory>
 #include <unordered_map>
 #include <utility>
 
@@ -246,10 +245,9 @@ void ValidationSignals::ChainStateFlushed(ChainstateRole role, const CBlockLocat
                           locator.IsNull() ? "null" : locator.vHave.front().ToString());
 }
 
-void ValidationSignals::BlockChecked(const std::shared_ptr<const CBlock>& block, const BlockValidationState& state)
-{
+void ValidationSignals::BlockChecked(const CBlock& block, const BlockValidationState& state) {
     LOG_EVENT("%s: block hash=%s state=%s", __func__,
-              block->GetHash().ToString(), state.ToString());
+              block.GetHash().ToString(), state.ToString());
     m_internals->Iterate([&](CValidationInterface& callbacks) { callbacks.BlockChecked(block, state); });
 }
 

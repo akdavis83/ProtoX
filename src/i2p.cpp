@@ -1,4 +1,4 @@
-// Copyright (c) 2020-present The Bitcoin Core developers
+// Copyright (c) 2020-present The QTC Core developers
 // Distributed under the MIT software license, see the accompanying
 // file COPYING or http://www.opensource.org/licenses/mit-license.php.
 
@@ -119,7 +119,7 @@ namespace sam {
 
 Session::Session(const fs::path& private_key_file,
                  const Proxy& control_host,
-                 std::shared_ptr<CThreadInterrupt> interrupt)
+                 CThreadInterrupt* interrupt)
     : m_private_key_file{private_key_file},
       m_control_host{control_host},
       m_interrupt{interrupt},
@@ -127,7 +127,7 @@ Session::Session(const fs::path& private_key_file,
 {
 }
 
-Session::Session(const Proxy& control_host, std::shared_ptr<CThreadInterrupt> interrupt)
+Session::Session(const Proxy& control_host, CThreadInterrupt* interrupt)
     : m_control_host{control_host},
       m_interrupt{interrupt},
       m_transient{true}
@@ -162,7 +162,7 @@ bool Session::Accept(Connection& conn)
     std::string errmsg;
     bool disconnect{false};
 
-    while (!m_interrupt->interrupted()) {
+    while (!*m_interrupt) {
         Sock::Event occurred;
         if (!conn.sock->Wait(MAX_WAIT_FOR_IO, Sock::RECV, &occurred)) {
             errmsg = "wait on socket failed";
@@ -205,7 +205,7 @@ bool Session::Accept(Connection& conn)
         return true;
     }
 
-    if (m_interrupt->interrupted()) {
+    if (*m_interrupt) {
         LogPrintLevel(BCLog::I2P, BCLog::Level::Debug, "Accept was interrupted\n");
     } else {
         LogPrintLevel(BCLog::I2P, BCLog::Level::Debug, "Error accepting%s: %s\n", disconnect ? " (will close the session)" : "", errmsg);

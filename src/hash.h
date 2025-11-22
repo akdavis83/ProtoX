@@ -1,10 +1,10 @@
 // Copyright (c) 2009-2010 Satoshi Nakamoto
-// Copyright (c) 2009-present The Bitcoin Core developers
+// Copyright (c) 2009-present The QTC Core developers
 // Distributed under the MIT software license, see the accompanying
 // file COPYING or http://www.opensource.org/licenses/mit-license.php.
 
-#ifndef BITCOIN_HASH_H
-#define BITCOIN_HASH_H
+#ifndef QTC_HASH_H
+#define QTC_HASH_H
 
 #include <attributes.h>
 #include <crypto/common.h>
@@ -15,12 +15,20 @@
 #include <span.h>
 #include <uint256.h>
 
+// QTC Quantum-Safe Crypto includes
+#include <crypto/blake3/blake3.h>
+
+extern "C" {
+    // SHA3 implementation for quantum-safe hashing
+    void sha3_512(uint8_t* output, const uint8_t* input, size_t input_len);
+}
+
 #include <string>
 #include <vector>
 
 typedef uint256 ChainCode;
 
-/** A hasher class for Bitcoin's 256-bit hash (double SHA-256). */
+/** A hasher class for Quantum Coin's 256-bit hash (double SHA-256). */
 class CHash256 {
 private:
     CSHA256 sha;
@@ -45,7 +53,58 @@ public:
     }
 };
 
-/** A hasher class for Bitcoin's 160-bit hash (SHA-256 + RIPEMD-160). */
+/** A hasher class for QTC's quantum-safe 512-bit hash (SHA3-512). */
+class QHash512 {
+private:
+    std::vector<unsigned char> data;
+public:
+    static const size_t OUTPUT_SIZE = 64;
+
+    void Finalize(std::span<unsigned char> output) {
+        assert(output.size() == OUTPUT_SIZE);
+        sha3_512(output.data(), data.data(), data.size());
+    }
+
+    QHash512& Write(std::span<const unsigned char> input) {
+        data.insert(data.end(), input.begin(), input.end());
+        return *this;
+    }
+
+    QHash512& Reset() {
+        data.clear();
+        return *this;
+    }
+};
+
+/** A hasher class for QTC's BLAKE3 quantum-safe mining algorithm. */
+class QBLAKE3 {
+private:
+    blake3_hasher hasher; // BLAKE3 hasher state
+    
+public:
+    static const size_t OUTPUT_SIZE = 32;
+
+    QBLAKE3() {
+        blake3_hasher_init(&hasher);
+    }
+
+    void Finalize(std::span<unsigned char> output) {
+        assert(output.size() == OUTPUT_SIZE);
+        blake3_hasher_finalize(&hasher, output.data(), OUTPUT_SIZE);
+    }
+
+    QBLAKE3& Write(std::span<const unsigned char> input) {
+        blake3_hasher_update(&hasher, input.data(), input.size());
+        return *this;
+    }
+
+    QBLAKE3& Reset() {
+        blake3_hasher_init(&hasher);
+        return *this;
+    }
+};
+
+/** A hasher class for Quantum Coin's 160-bit hash (SHA-256 + RIPEMD-160). */
 class CHash160 {
 private:
     CSHA256 sha;
@@ -226,4 +285,64 @@ inline uint160 RIPEMD160(std::span<const unsigned char> data)
     return result;
 }
 
-#endif // BITCOIN_HASH_H
+/** QTC Quantum-Safe Hash Functions */
+template<typename T>
+inline uint256 QHash(std::span<const T> input) {
+    uint256 result;
+    QHash256().Write(std::span{reinterpret_cast<const unsigned char*>(input.data()), input.size() * sizeof(T)}).Finalize(result);
+    return result;
+}
+
+template<typename T1, typename T2>
+inline uint256 QHash(const T1 p1begin, const T1 p1end,
+                     const T2 p2begin, const T2 p2end) {
+    uint256 result;
+    QHash256().Write(std::span{p1begin, p1end}).Write(std::span{p2begin, p2end}).Finalize(result);
+    return result;
+}
+
+/** Create quantum-safe hash of post-quantum public key */
+inline uint256 QHashPubKey(const std::vector<unsigned char>& pubkey) {
+    return QHash(std::span{pubkey});
+}
+
+/** Create commitment hash for off-chain ciphertext storage */
+inline uint256 QHashCommitment(const std::vector<unsigned char>& ciphertext, uint32_t nonce) {
+    uint256 result;
+    QHash256().Write(std::span{ciphertext}).Write(std::span{reinterpret_cast<const unsigned char*>(&nonce), sizeof(nonce)}).Finalize(result);
+    return result;
+}
+
+/** QTC BLAKE3 Hash Functions for Quantum-Safe Mining */
+template<typename T>
+inline uint256 QBLAKE3Hash(std::span<const T> input) {
+    uint256 result;
+    QBLAKE3().Write(std::span{reinterpret_cast<const unsigned char*>(input.data()), input.size() * sizeof(T)}).Finalize(result);
+    return result;
+}
+
+template<typename T1, typename T2>
+inline uint256 QBLAKE3Hash(const T1 p1begin, const T1 p1end,
+                           const T2 p2begin, const T2 p2end) {
+    uint256 result;
+    QBLAKE3().Write(std::span{p1begin, p1end}).Write(std::span{p2begin, p2end}).Finalize(result);
+    return result;
+}
+
+/** Single BLAKE3 hash for block headers (quantum-safe mining) */
+inline uint256 QBLAKE3Single(const std::vector<unsigned char>& input) {
+    uint256 result;
+    blake3_hash(input.data(), input.size(), result.begin());
+    return result;
+}
+
+/** Double BLAKE3 hash for extra security (if needed) */
+inline uint256 QBLAKE3Double(const std::vector<unsigned char>& input) {
+    uint256 hash1;
+    blake3_hash(input.data(), input.size(), hash1.begin());
+    uint256 result;
+    blake3_hash(hash1.begin(), hash1.size(), result.begin());
+    return result;
+}
+
+#endif // QTC_HASH_H

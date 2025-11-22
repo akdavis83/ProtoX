@@ -1,4 +1,4 @@
-// Copyright (c) 2021-2022 The Bitcoin Core developers
+// Copyright (c) 2021-2022 The QTC Core developers
 // Distributed under the MIT software license, see the accompanying
 // file COPYING or http://www.opensource.org/licenses/mit-license.php.
 
@@ -50,10 +50,10 @@ BOOST_AUTO_TEST_CASE(unlimited_recv)
         return std::make_unique<StaticContentsSock>(std::string(i2p::sam::MAX_MSG_SIZE + 1, 'a'));
     };
 
-    auto interrupt{std::make_shared<CThreadInterrupt>()};
+    CThreadInterrupt interrupt;
     const std::optional<CService> addr{Lookup("127.0.0.1", 9000, false)};
     const Proxy sam_proxy(addr.value(), /*tor_stream_isolation=*/false);
-    i2p::sam::Session session(gArgs.GetDataDirNet() / "test_i2p_private_key", sam_proxy, interrupt);
+    i2p::sam::Session session(gArgs.GetDataDirNet() / "test_i2p_private_key", sam_proxy, &interrupt);
 
     {
         ASSERT_DEBUG_LOG("Creating persistent SAM session");
@@ -112,12 +112,12 @@ BOOST_AUTO_TEST_CASE(listen_ok_accept_fail)
         // clang-format on
     };
 
-    auto interrupt{std::make_shared<CThreadInterrupt>()};
+    CThreadInterrupt interrupt;
     const CService addr{in6_addr(IN6ADDR_LOOPBACK_INIT), /*port=*/7656};
     const Proxy sam_proxy(addr, /*tor_stream_isolation=*/false);
     i2p::sam::Session session(gArgs.GetDataDirNet() / "test_i2p_private_key",
                               sam_proxy,
-                              interrupt);
+                              &interrupt);
 
     i2p::Connection conn;
     for (size_t i = 0; i < 5; ++i) {
@@ -155,10 +155,10 @@ BOOST_AUTO_TEST_CASE(damaged_private_key)
               "391 bytes"}}) {
         BOOST_REQUIRE(WriteBinaryFile(i2p_private_key_file, file_contents));
 
-        auto interrupt{std::make_shared<CThreadInterrupt>()};
+        CThreadInterrupt interrupt;
         const CService addr{in6_addr(IN6ADDR_LOOPBACK_INIT), /*port=*/7656};
         const Proxy sam_proxy{addr, /*tor_stream_isolation=*/false};
-        i2p::sam::Session session(i2p_private_key_file, sam_proxy, interrupt);
+        i2p::sam::Session session(i2p_private_key_file, sam_proxy, &interrupt);
 
         {
             ASSERT_DEBUG_LOG("Creating persistent SAM session");

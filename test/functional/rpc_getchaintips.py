@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-# Copyright (c) 2014-2021 The Bitcoin Core developers
+# Copyright (c) 2014-2021 The Quantum Coin Core developers
 # Distributed under the MIT software license, see the accompanying
 # file COPYING or http://www.opensource.org/licenses/mit-license.php.
 """Test the getchaintips RPC.
@@ -14,10 +14,10 @@ from test_framework.blocktools import (
     create_block,
     create_coinbase,
 )
-from test_framework.test_framework import BitcoinTestFramework
+from test_framework.test_framework import Quantum CoinTestFramework
 from test_framework.util import assert_equal
 
-class GetChainTipsTest (BitcoinTestFramework):
+class GetChainTipsTest (Quantum CoinTestFramework):
     def set_test_params(self):
         self.num_nodes = 4
 
@@ -73,7 +73,7 @@ class GetChainTipsTest (BitcoinTestFramework):
         invalid_block.solve()
 
         block_time += 1
-        block2 = create_block(invalid_block.hash_int, create_coinbase(2), block_time, version=4)
+        block2 = create_block(invalid_block.sha256, create_coinbase(2), block_time, version=4)
         block2.solve()
 
         self.log.info("Submit headers-only chain")

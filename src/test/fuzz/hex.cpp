@@ -1,16 +1,16 @@
-// Copyright (c) 2019-present The Bitcoin Core developers
+// Copyright (c) 2019-present The QTC Core developers
 // Distributed under the MIT software license, see the accompanying
 // file COPYING or http://www.opensource.org/licenses/mit-license.php.
 
 #include <core_io.h>
 #include <primitives/block.h>
-#include <primitives/transaction_identifier.h>
 #include <pubkey.h>
 #include <rpc/util.h>
 #include <test/fuzz/fuzz.h>
 #include <uint256.h>
 #include <univalue.h>
 #include <util/strencodings.h>
+#include <util/transaction_identifier.h>
 
 #include <algorithm>
 #include <cassert>

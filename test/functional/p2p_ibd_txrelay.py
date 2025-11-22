@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-# Copyright (c) 2020-2021 The Bitcoin Core developers
+# Copyright (c) 2020-2021 The Quantum Coin Core developers
 # Distributed under the MIT software license, see the accompanying
 # file COPYING or http://www.opensource.org/licenses/mit-license.php.
 """Test transaction relay behavior during IBD:
@@ -26,19 +26,19 @@ from test_framework.p2p import (
         P2PInterface,
         p2p_lock
 )
-from test_framework.test_framework import BitcoinTestFramework
+from test_framework.test_framework import Quantum CoinTestFramework
 
-MAX_FEE_FILTER = Decimal(9936506) / COIN
-NORMAL_FEE_FILTER = Decimal(10) / COIN
+MAX_FEE_FILTER = Decimal(9170997) / COIN
+NORMAL_FEE_FILTER = Decimal(100) / COIN
 
 
-class P2PIBDTxRelayTest(BitcoinTestFramework):
+class P2PIBDTxRelayTest(Quantum CoinTestFramework):
     def set_test_params(self):
         self.setup_clean_chain = True
         self.num_nodes = 2
         self.extra_args = [
-            ["-minrelaytxfee={:.8f}".format(NORMAL_FEE_FILTER)],
-            ["-minrelaytxfee={:.8f}".format(NORMAL_FEE_FILTER)],
+            ["-minrelaytxfee={}".format(NORMAL_FEE_FILTER)],
+            ["-minrelaytxfee={}".format(NORMAL_FEE_FILTER)],
         ]
 
     def run_test(self):

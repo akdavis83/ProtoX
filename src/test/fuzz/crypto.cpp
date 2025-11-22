@@ -1,4 +1,4 @@
-// Copyright (c) 2020-2021 The Bitcoin Core developers
+// Copyright (c) 2020-2021 The QTC Core developers
 // Distributed under the MIT software license, see the accompanying
 // file COPYING or http://www.opensource.org/licenses/mit-license.php.
 
@@ -35,7 +35,7 @@ FUZZ_TARGET(crypto)
     CSHA1 sha1;
     CSHA256 sha256;
     CSHA512 sha512;
-    SHA3_256 sha3;
+    SHA3_512 sha3;
     CSipHasher sip_hasher{fuzzed_data_provider.ConsumeIntegral<uint64_t>(), fuzzed_data_provider.ConsumeIntegral<uint64_t>()};
 
     LIMITED_WHILE(fuzzed_data_provider.ConsumeBool(), 30)
@@ -116,7 +116,7 @@ FUZZ_TARGET(crypto)
                         data[0] = sip_hasher.Finalize() % 256;
                     },
                     [&] {
-                        data.resize(SHA3_256::OUTPUT_SIZE);
+                        data.resize(SHA3_512::OUTPUT_SIZE);
                         sha3.Finalize(data);
                     });
             });

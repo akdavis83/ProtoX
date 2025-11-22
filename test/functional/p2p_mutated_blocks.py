@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-# Copyright (c) The Bitcoin Core developers
+# Copyright (c) The Quantum Coin Core developers
 # Distributed under the MIT software license, see the accompanying
 # file COPYING or http://www.opensource.org/licenses/mit-license.php.
 
@@ -16,7 +16,7 @@ from test_framework.messages import (
     msg_blocktxn,
     HeaderAndShortIDs,
 )
-from test_framework.test_framework import BitcoinTestFramework
+from test_framework.test_framework import Quantum CoinTestFramework
 from test_framework.blocktools import (
     COINBASE_MATURITY,
     create_block,
@@ -27,7 +27,7 @@ from test_framework.util import assert_equal
 from test_framework.wallet import MiniWallet
 import copy
 
-class MutatedBlocksTest(BitcoinTestFramework):
+class MutatedBlocksTest(Quantum CoinTestFramework):
     def set_test_params(self):
         self.setup_clean_chain = True
         self.num_nodes = 1
@@ -68,7 +68,7 @@ class MutatedBlocksTest(BitcoinTestFramework):
                 return False
 
             get_block_txn = honest_relayer.last_message['getblocktxn']
-            return get_block_txn.block_txn_request.blockhash == block.hash_int and \
+            return get_block_txn.block_txn_request.blockhash == block.sha256 and \
                    get_block_txn.block_txn_request.indexes == [1]
         honest_relayer.wait_until(self_transfer_requested, timeout=5)
 
@@ -93,9 +93,9 @@ class MutatedBlocksTest(BitcoinTestFramework):
         # The honest relayer should be able to complete relaying the block by
         # sending the blocktxn that was requested.
         block_txn = msg_blocktxn()
-        block_txn.block_transactions = BlockTransactions(blockhash=block.hash_int, transactions=[tx])
+        block_txn.block_transactions = BlockTransactions(blockhash=block.sha256, transactions=[tx])
         honest_relayer.send_and_ping(block_txn)
-        assert_equal(self.nodes[0].getbestblockhash(), block.hash_hex)
+        assert_equal(self.nodes[0].getbestblockhash(), block.hash)
 
         # Check that unexpected-witness mutation check doesn't trigger on a header that doesn't connect to anything
         assert_equal(len(self.nodes[0].getpeerinfo()), 1)

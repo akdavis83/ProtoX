@@ -1,17 +1,17 @@
 // Copyright (c) 2009-2010 Satoshi Nakamoto
-// Copyright (c) 2009-2022 The Bitcoin Core developers
+// Copyright (c) 2009-2022 The QTC Core developers
 // Distributed under the MIT software license, see the accompanying
 // file COPYING or http://www.opensource.org/licenses/mit-license.php.
 
-#ifndef BITCOIN_PRIMITIVES_TRANSACTION_H
-#define BITCOIN_PRIMITIVES_TRANSACTION_H
+#ifndef QTC_PRIMITIVES_TRANSACTION_H
+#define QTC_PRIMITIVES_TRANSACTION_H
 
 #include <attributes.h>
 #include <consensus/amount.h>
-#include <primitives/transaction_identifier.h> // IWYU pragma: export
 #include <script/script.h>
 #include <serialize.h>
 #include <uint256.h>
+#include <util/transaction_identifier.h> // IWYU pragma: export
 
 #include <cstddef>
 #include <cstdint>
@@ -70,6 +70,11 @@ public:
     CScript scriptSig;
     uint32_t nSequence;
     CScriptWitness scriptWitness; //!< Only serialized through CTransaction
+    
+    // QTC Quantum-Safe Extensions
+    QCiphertextCommitment qtc_kem_commitment; //!< KEM ciphertext commitment (off-chain)
+    std::vector<unsigned char> qtc_signature;  //!< Dilithium signature (compressed)
+    uint32_t qtc_aggregation_index;           //!< Index for signature aggregation (0 = individual sig)
 
     /**
      * Setting nSequence to this value for every input in a transaction
@@ -121,18 +126,34 @@ public:
     CTxIn()
     {
         nSequence = SEQUENCE_FINAL;
+        qtc_aggregation_index = 0; // Individual signature by default
     }
 
     explicit CTxIn(COutPoint prevoutIn, CScript scriptSigIn=CScript(), uint32_t nSequenceIn=SEQUENCE_FINAL);
     CTxIn(Txid hashPrevTx, uint32_t nOut, CScript scriptSigIn=CScript(), uint32_t nSequenceIn=SEQUENCE_FINAL);
 
-    SERIALIZE_METHODS(CTxIn, obj) { READWRITE(obj.prevout, obj.scriptSig, obj.nSequence); }
+    SERIALIZE_METHODS(CTxIn, obj) { 
+        READWRITE(obj.prevout, obj.scriptSig, obj.nSequence);
+        // Quantum-safe fields (conditional serialization based on script type)
+        if (!obj.qtc_kem_commitment.commitment_hash.IsNull()) {
+            READWRITE(obj.qtc_kem_commitment);
+        }
+        if (!obj.qtc_signature.empty()) {
+            READWRITE(obj.qtc_signature);
+        }
+        if (obj.qtc_aggregation_index > 0) {
+            READWRITE(obj.qtc_aggregation_index);
+        }
+    }
 
     friend bool operator==(const CTxIn& a, const CTxIn& b)
     {
         return (a.prevout   == b.prevout &&
                 a.scriptSig == b.scriptSig &&
-                a.nSequence == b.nSequence);
+                a.nSequence == b.nSequence &&
+                a.qtc_kem_commitment == b.qtc_kem_commitment &&
+                a.qtc_signature == b.qtc_signature &&
+                a.qtc_aggregation_index == b.qtc_aggregation_index);
     }
 
     friend bool operator!=(const CTxIn& a, const CTxIn& b)
@@ -360,17 +381,34 @@ public:
 
     friend bool operator==(const CTransaction& a, const CTransaction& b)
     {
-        return a.GetWitnessHash() == b.GetWitnessHash();
+        return a.hash == b.hash;
     }
 
     friend bool operator!=(const CTransaction& a, const CTransaction& b)
     {
-        return !operator==(a, b);
+        return a.hash != b.hash;
     }
 
     std::string ToString() const;
 
     bool HasWitness() const { return m_has_witness; }
+};
+
+/** QTC Aggregated Signature Structure */
+struct QTCAggregatedSignature
+{
+    std::vector<unsigned char> aggregated_signature;  //!< Combined Dilithium signature
+    std::vector<uint32_t> input_indices;            //!< Which inputs this signature covers
+    std::vector<QCompressedPubKey> pubkeys;         //!< Compressed pubkeys for verification
+    
+    QTCAggregatedSignature() = default;
+    
+    SERIALIZE_METHODS(QTCAggregatedSignature, obj) {
+        READWRITE(obj.aggregated_signature, obj.input_indices, obj.pubkeys);
+    }
+    
+    bool IsEmpty() const { return aggregated_signature.empty(); }
+    size_t GetInputCount() const { return input_indices.size(); }
 };
 
 /** A mutable version of CTransaction. */
@@ -380,6 +418,9 @@ struct CMutableTransaction
     std::vector<CTxOut> vout;
     uint32_t version;
     uint32_t nLockTime;
+    
+    // QTC Signature Aggregation
+    std::vector<QTCAggregatedSignature> qtc_aggregated_sigs;
 
     explicit CMutableTransaction();
     explicit CMutableTransaction(const CTransaction& tx);
@@ -423,4 +464,20 @@ struct CMutableTransaction
 typedef std::shared_ptr<const CTransaction> CTransactionRef;
 template <typename Tx> static inline CTransactionRef MakeTransactionRef(Tx&& txIn) { return std::make_shared<const CTransaction>(std::forward<Tx>(txIn)); }
 
-#endif // BITCOIN_PRIMITIVES_TRANSACTION_H
+/** A generic txid reference (txid or wtxid). */
+class GenTxid
+{
+    bool m_is_wtxid;
+    uint256 m_hash;
+    GenTxid(bool is_wtxid, const uint256& hash) : m_is_wtxid(is_wtxid), m_hash(hash) {}
+
+public:
+    static GenTxid Txid(const uint256& hash) { return GenTxid{false, hash}; }
+    static GenTxid Wtxid(const uint256& hash) { return GenTxid{true, hash}; }
+    bool IsWtxid() const { return m_is_wtxid; }
+    const uint256& GetHash() const LIFETIMEBOUND { return m_hash; }
+    friend bool operator==(const GenTxid& a, const GenTxid& b) { return a.m_is_wtxid == b.m_is_wtxid && a.m_hash == b.m_hash; }
+    friend bool operator<(const GenTxid& a, const GenTxid& b) { return std::tie(a.m_is_wtxid, a.m_hash) < std::tie(b.m_is_wtxid, b.m_hash); }
+};
+
+#endif // QTC_PRIMITIVES_TRANSACTION_H

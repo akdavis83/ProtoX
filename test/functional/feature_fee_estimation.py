@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-# Copyright (c) 2014-2022 The Bitcoin Core developers
+# Copyright (c) 2014-2022 The Quantum Coin Core developers
 # Distributed under the MIT software license, see the accompanying
 # file COPYING or http://www.opensource.org/licenses/mit-license.php.
 """Test fee estimation code."""
@@ -12,7 +12,7 @@ import time
 from test_framework.messages import (
     COIN,
 )
-from test_framework.test_framework import BitcoinTestFramework
+from test_framework.test_framework import Quantum CoinTestFramework
 from test_framework.util import (
     assert_not_equal,
     assert_equal,
@@ -90,20 +90,19 @@ def check_smart_estimates(node, fees_seen):
     """Call estimatesmartfee and verify that the estimates meet certain invariants."""
 
     delta = 1.0e-6  # account for rounding error
+    last_feerate = float(max(fees_seen))
     all_smart_estimates = [node.estimatesmartfee(i) for i in range(1, 26)]
     mempoolMinFee = node.getmempoolinfo()["mempoolminfee"]
     minRelaytxFee = node.getmempoolinfo()["minrelaytxfee"]
-    feerate_ceiling = max(max(fees_seen), float(mempoolMinFee), float(minRelaytxFee))
-    last_feerate = feerate_ceiling
     for i, e in enumerate(all_smart_estimates):  # estimate is for i+1
         feerate = float(e["feerate"])
         assert_greater_than(feerate, 0)
         assert_greater_than_or_equal(feerate, float(mempoolMinFee))
         assert_greater_than_or_equal(feerate, float(minRelaytxFee))
 
-        if feerate + delta < min(fees_seen) or feerate - delta > feerate_ceiling:
+        if feerate + delta < min(fees_seen) or feerate - delta > max(fees_seen):
             raise AssertionError(
-                f"Estimated fee ({feerate}) out of range ({min(fees_seen)},{feerate_ceiling})"
+                f"Estimated fee ({feerate}) out of range ({min(fees_seen)},{max(fees_seen)})"
             )
         if feerate - delta > last_feerate:
             raise AssertionError(
@@ -138,15 +137,15 @@ def check_fee_estimates_btw_modes(node, expected_conservative, expected_economic
     assert_equal(fee_est_default, expected_economical)
 
 
-class EstimateFeeTest(BitcoinTestFramework):
+class EstimateFeeTest(Quantum CoinTestFramework):
     def set_test_params(self):
         self.num_nodes = 3
         # whitelist peers to speed up tx relay / mempool sync
         self.noban_tx_relay = True
         self.extra_args = [
             [],
-            ["-blockmaxweight=72000"],
-            ["-blockmaxweight=36000"],
+            ["-blockmaxweight=68000"],
+            ["-blockmaxweight=32000"],
         ]
 
     def setup_network(self):
@@ -238,10 +237,10 @@ class EstimateFeeTest(BitcoinTestFramework):
         self.log.info("Final estimates after emptying mempools")
         check_estimates(self.nodes[1], self.fees_per_kb)
 
-    def test_estimates_with_highminrelaytxfee(self):
-        high_val = 3 * self.nodes[1].estimatesmartfee(2)["feerate"]
+    def test_feerate_mempoolminfee(self):
+        high_val = 3 * self.nodes[1].estimatesmartfee(1)["feerate"]
         self.restart_node(1, extra_args=[f"-minrelaytxfee={high_val}"])
-        check_smart_estimates(self.nodes[1], self.fees_per_kb)
+        check_estimates(self.nodes[1], self.fees_per_kb)
         self.restart_node(1)
 
     def sanity_check_rbf_estimates(self, utxos):
@@ -452,11 +451,11 @@ class EstimateFeeTest(BitcoinTestFramework):
         self.log.info("Test fee_estimates.dat is flushed periodically")
         self.test_estimate_dat_is_flushed_periodically()
 
-        # check that estimatesmartfee feerate is greater than or equal to maximum of mempoolminfee and minrelaytxfee
+        # check that the effective feerate is greater than or equal to the mempoolminfee even for high mempoolminfee
         self.log.info(
-            "Test fee rate estimation after restarting node with high minrelaytxfee"
+            "Test fee rate estimation after restarting node with high MempoolMinFee"
         )
-        self.test_estimates_with_highminrelaytxfee()
+        self.test_feerate_mempoolminfee()
 
         self.log.info("Test acceptstalefeeestimates option")
         self.test_acceptstalefeeestimates_option()

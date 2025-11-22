@@ -1,9 +1,9 @@
 #!/usr/bin/env python3
-# Copyright (c) 2022 The Bitcoin Core developers
+# Copyright (c) 2022 The Quantum Coin Core developers
 # Distributed under the MIT software license, see the accompanying
 # file COPYING or http://www.opensource.org/licenses/mit-license.php.
 
-""" Example logging Bitcoin Core mempool events using the mempool:added,
+""" Example logging Quantum Coin Core mempool events using the mempool:added,
     mempool:removed, mempool:replaced, and mempool:rejected tracepoints. """
 
 import curses
@@ -17,9 +17,9 @@ from bcc import BPF, USDT
 PROGRAM = """
 # include <uapi/linux/ptrace.h>
 
-// The longest rejection reason is 114 chars and is generated in case of SCRIPT_ERR_EVAL_FALSE by
-// strprintf("block-script-verify-flag-failed (%s)", ScriptErrorString(check.GetScriptError()))
-#define MAX_REJECT_REASON_LENGTH        114
+// The longest rejection reason is 118 chars and is generated in case of SCRIPT_ERR_EVAL_FALSE by
+// strprintf("mandatory-script-verify-flag-failed (%s)", ScriptErrorString(check.GetScriptError()))
+#define MAX_REJECT_REASON_LENGTH        118
 // The longest string returned by RemovalReasonToString() is 'sizelimit'
 #define MAX_REMOVAL_REASON_LENGTH       9
 #define HASH_LENGTH                     32
@@ -66,7 +66,7 @@ BPF_PERF_OUTPUT(replaced_events);
 int trace_added(struct pt_regs *ctx) {
   struct added_event added = {};
   void *phash = NULL;
-  bpf_usdt_readarg(1, ctx, &phash);
+  bpf_usdt_readarg(1, ctx, phash);
   bpf_probe_read_user(&added.hash, sizeof(added.hash), phash);
   bpf_usdt_readarg(2, ctx, &added.vsize);
   bpf_usdt_readarg(3, ctx, &added.fee);
@@ -78,9 +78,9 @@ int trace_added(struct pt_regs *ctx) {
 int trace_removed(struct pt_regs *ctx) {
   struct removed_event removed = {};
   void *phash = NULL, *preason = NULL;
-  bpf_usdt_readarg(1, ctx, &phash);
+  bpf_usdt_readarg(1, ctx, phash);
   bpf_probe_read_user(&removed.hash, sizeof(removed.hash), phash);
-  bpf_usdt_readarg(2, ctx, &preason);
+  bpf_usdt_readarg(2, ctx, preason);
   bpf_probe_read_user_str(&removed.reason, sizeof(removed.reason), preason);
   bpf_usdt_readarg(3, ctx, &removed.vsize);
   bpf_usdt_readarg(4, ctx, &removed.fee);
@@ -93,9 +93,9 @@ int trace_removed(struct pt_regs *ctx) {
 int trace_rejected(struct pt_regs *ctx) {
   struct rejected_event rejected = {};
   void *phash = NULL, *preason = NULL;
-  bpf_usdt_readarg(1, ctx, &phash);
+  bpf_usdt_readarg(1, ctx, phash);
   bpf_probe_read_user(&rejected.hash, sizeof(rejected.hash), phash);
-  bpf_usdt_readarg(2, ctx, &preason);
+  bpf_usdt_readarg(2, ctx, preason);
   bpf_probe_read_user_str(&rejected.reason, sizeof(rejected.reason), preason);
   rejected_events.perf_submit(ctx, &rejected, sizeof(rejected));
   return 0;
@@ -104,12 +104,12 @@ int trace_rejected(struct pt_regs *ctx) {
 int trace_replaced(struct pt_regs *ctx) {
   struct replaced_event replaced = {};
   void *phash_replaced = NULL, *phash_replacement = NULL;
-  bpf_usdt_readarg(1, ctx, &phash_replaced);
+  bpf_usdt_readarg(1, ctx, phash_replaced);
   bpf_probe_read_user(&replaced.replaced_hash, sizeof(replaced.replaced_hash), phash_replaced);
   bpf_usdt_readarg(2, ctx, &replaced.replaced_vsize);
   bpf_usdt_readarg(3, ctx, &replaced.replaced_fee);
   bpf_usdt_readarg(4, ctx, &replaced.replaced_entry_time);
-  bpf_usdt_readarg(5, ctx, &phash_replacement);
+  bpf_usdt_readarg(5, ctx, phash_replacement);
   bpf_probe_read_user(&replaced.replacement_hash, sizeof(replaced.replacement_hash), phash_replacement);
   bpf_usdt_readarg(6, ctx, &replaced.replacement_vsize);
   bpf_usdt_readarg(7, ctx, &replaced.replacement_fee);
@@ -121,16 +121,16 @@ int trace_replaced(struct pt_regs *ctx) {
 
 
 def main(pid):
-    print(f"Hooking into bitcoind with pid {pid}")
-    bitcoind_with_usdts = USDT(pid=int(pid))
+    print(f"Hooking into qtcd with pid {pid}")
+    qtcd_with_usdts = USDT(pid=int(pid))
 
     # attaching the trace functions defined in the BPF program
     # to the tracepoints
-    bitcoind_with_usdts.enable_probe(probe="mempool:added", fn_name="trace_added")
-    bitcoind_with_usdts.enable_probe(probe="mempool:removed", fn_name="trace_removed")
-    bitcoind_with_usdts.enable_probe(probe="mempool:replaced", fn_name="trace_replaced")
-    bitcoind_with_usdts.enable_probe(probe="mempool:rejected", fn_name="trace_rejected")
-    bpf = BPF(text=PROGRAM, usdt_contexts=[bitcoind_with_usdts])
+    qtcd_with_usdts.enable_probe(probe="mempool:added", fn_name="trace_added")
+    qtcd_with_usdts.enable_probe(probe="mempool:removed", fn_name="trace_removed")
+    qtcd_with_usdts.enable_probe(probe="mempool:replaced", fn_name="trace_replaced")
+    qtcd_with_usdts.enable_probe(probe="mempool:rejected", fn_name="trace_rejected")
+    bpf = BPF(text=PROGRAM, usdt_contexts=[qtcd_with_usdts])
 
     events = []
 
@@ -372,7 +372,7 @@ class Dashboard:
 
 if __name__ == "__main__":
     if len(sys.argv) < 2:
-        print("USAGE: ", sys.argv[0], "<pid of bitcoind>")
+        print("USAGE: ", sys.argv[0], "<pid of qtcd>")
         exit(1)
 
     pid = sys.argv[1]

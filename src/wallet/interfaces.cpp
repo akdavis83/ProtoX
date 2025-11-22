@@ -1,4 +1,4 @@
-// Copyright (c) 2018-2022 The Bitcoin Core developers
+// Copyright (c) 2018-2022 The QTC Core developers
 // Distributed under the MIT software license, see the accompanying
 // file COPYING or http://www.opensource.org/licenses/mit-license.php.
 
@@ -9,7 +9,7 @@
 #include <interfaces/chain.h>
 #include <interfaces/handler.h>
 #include <node/types.h>
-#include <policy/fees/block_policy_estimator.h>
+#include <policy/fees.h>
 #include <primitives/transaction.h>
 #include <rpc/server.h>
 #include <scheduler.h>
@@ -23,6 +23,7 @@
 #include <wallet/context.h>
 #include <wallet/feebumper.h>
 #include <wallet/fees.h>
+#include <wallet/types.h>
 #include <wallet/load.h>
 #include <wallet/receive.h>
 #include <wallet/rpc/wallet.h>
@@ -73,10 +74,10 @@ WalletTx MakeWalletTx(CWallet& wallet, const CWalletTx& wtx)
         result.txout_address.emplace_back();
         result.txout_address_is_mine.emplace_back(ExtractDestination(txout.scriptPubKey, result.txout_address.back()) ?
                                                       wallet.IsMine(result.txout_address.back()) :
-                                                      false);
+                                                      ISMINE_NO);
     }
-    result.credit = CachedTxGetCredit(wallet, wtx, /*avoid_reuse=*/true);
-    result.debit = CachedTxGetDebit(wallet, wtx, /*avoid_reuse=*/true);
+    result.credit = CachedTxGetCredit(wallet, wtx, ISMINE_ALL);
+    result.debit = CachedTxGetDebit(wallet, wtx, ISMINE_ALL);
     result.change = CachedTxGetChange(wallet, wtx);
     result.time = wtx.GetTxTime();
     result.value_map = wtx.mapValue;
@@ -172,7 +173,7 @@ public:
     bool isSpendable(const CTxDestination& dest) override
     {
         LOCK(m_wallet->cs_wallet);
-        return m_wallet->IsMine(dest);
+        return m_wallet->IsMine(dest) & ISMINE_SPENDABLE;
     }
     bool setAddressBook(const CTxDestination& dest, const std::string& name, const std::optional<AddressPurpose>& purpose) override
     {
@@ -184,6 +185,7 @@ public:
     }
     bool getAddress(const CTxDestination& dest,
         std::string* name,
+        isminetype* is_mine,
         AddressPurpose* purpose) override
     {
         LOCK(m_wallet->cs_wallet);
@@ -192,9 +194,16 @@ public:
         if (name) {
             *name = entry->GetLabel();
         }
+        std::optional<isminetype> dest_is_mine;
+        if (is_mine || purpose) {
+            dest_is_mine = m_wallet->IsMine(dest);
+        }
+        if (is_mine) {
+            *is_mine = *dest_is_mine;
+        }
         if (purpose) {
             // In very old wallets, address purpose may not be recorded so we derive it from IsMine
-            *purpose = entry->purpose.value_or(m_wallet->IsMine(dest) ? AddressPurpose::RECEIVE : AddressPurpose::SEND);
+            *purpose = entry->purpose.value_or(*dest_is_mine ? AddressPurpose::RECEIVE : AddressPurpose::SEND);
         }
         return true;
     }
@@ -204,7 +213,7 @@ public:
         std::vector<WalletAddress> result;
         m_wallet->ForEachAddrBookEntry([&](const CTxDestination& dest, const std::string& label, bool is_change, const std::optional<AddressPurpose>& purpose) EXCLUSIVE_LOCKS_REQUIRED(m_wallet->cs_wallet) {
             if (is_change) return;
-            bool is_mine = m_wallet->IsMine(dest);
+            isminetype is_mine = m_wallet->IsMine(dest);
             // In very old wallets, address purpose may not be recorded so we derive it from IsMine
             result.emplace_back(dest, is_mine, purpose.value_or(is_mine ? AddressPurpose::RECEIVE : AddressPurpose::SEND), label);
         });
@@ -240,12 +249,14 @@ public:
     bool lockCoin(const COutPoint& output, const bool write_to_db) override
     {
         LOCK(m_wallet->cs_wallet);
-        return m_wallet->LockCoin(output, write_to_db);
+        std::unique_ptr<WalletBatch> batch = write_to_db ? std::make_unique<WalletBatch>(m_wallet->GetDatabase()) : nullptr;
+        return m_wallet->LockCoin(output, batch.get());
     }
     bool unlockCoin(const COutPoint& output) override
     {
         LOCK(m_wallet->cs_wallet);
-        return m_wallet->UnlockCoin(output);
+        std::unique_ptr<WalletBatch> batch = std::make_unique<WalletBatch>(m_wallet->GetDatabase());
+        return m_wallet->UnlockCoin(output, batch.get());
     }
     bool isLockedCoin(const COutPoint& output) override
     {
@@ -422,25 +433,25 @@ public:
 
         return total_amount;
     }
-    bool txinIsMine(const CTxIn& txin) override
+    isminetype txinIsMine(const CTxIn& txin) override
     {
         LOCK(m_wallet->cs_wallet);
         return InputIsMine(*m_wallet, txin);
     }
-    bool txoutIsMine(const CTxOut& txout) override
+    isminetype txoutIsMine(const CTxOut& txout) override
     {
         LOCK(m_wallet->cs_wallet);
         return m_wallet->IsMine(txout);
     }
-    CAmount getDebit(const CTxIn& txin) override
+    CAmount getDebit(const CTxIn& txin, isminefilter filter) override
     {
         LOCK(m_wallet->cs_wallet);
-        return m_wallet->GetDebit(txin);
+        return m_wallet->GetDebit(txin, filter);
     }
-    CAmount getCredit(const CTxOut& txout) override
+    CAmount getCredit(const CTxOut& txout, isminefilter filter) override
     {
         LOCK(m_wallet->cs_wallet);
-        return OutputGetCredit(*m_wallet, txout);
+        return OutputGetCredit(*m_wallet, txout, filter);
     }
     CoinsList listCoins() override
     {

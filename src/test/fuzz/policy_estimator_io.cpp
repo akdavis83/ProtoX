@@ -1,9 +1,9 @@
-// Copyright (c) 2020-2022 The Bitcoin Core developers
+// Copyright (c) 2020-2022 The QTC Core developers
 // Distributed under the MIT software license, see the accompanying
 // file COPYING or http://www.opensource.org/licenses/mit-license.php.
 
-#include <policy/fees/block_policy_estimator.h>
-#include <policy/fees/block_policy_estimator_args.h>
+#include <policy/fees.h>
+#include <policy/fees_args.h>
 #include <streams.h>
 #include <test/fuzz/FuzzedDataProvider.h>
 #include <test/fuzz/fuzz.h>
@@ -32,5 +32,4 @@ FUZZ_TARGET(policy_estimator_io, .init = initialize_policy_estimator_io)
     if (block_policy_estimator.Read(fuzzed_auto_file)) {
         block_policy_estimator.Write(fuzzed_auto_file);
     }
-    (void)fuzzed_auto_file.fclose();
 }

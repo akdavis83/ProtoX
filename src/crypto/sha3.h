@@ -1,18 +1,19 @@
-// Copyright (c) 2020-present The Bitcoin Core developers
+// Copyright (c) 2020-present The QTC Core developers
 // Distributed under the MIT software license, see the accompanying
 // file COPYING or http://www.opensource.org/licenses/mit-license.php.
 
-#ifndef BITCOIN_CRYPTO_SHA3_H
-#define BITCOIN_CRYPTO_SHA3_H
+#ifndef QTC_CRYPTO_SHA3_H
+#define QTC_CRYPTO_SHA3_H
+
+#include <span.h>
 
 #include <cstdint>
 #include <cstdlib>
-#include <span>
 
 //! The Keccak-f[1600] transform.
 void KeccakF(uint64_t (&st)[25]);
 
-class SHA3_256
+class SHA3_512
 {
 private:
     uint64_t m_state[25] = {0};
@@ -20,8 +21,8 @@ private:
     unsigned m_bufsize = 0;
     unsigned m_pos = 0;
 
-    //! Sponge rate in bits.
-    static constexpr unsigned RATE_BITS = 1088;
+    //! Sponge rate in bits for SHA3-512.
+    static constexpr unsigned RATE_BITS = 576;
 
     //! Sponge rate expressed as a multiple of the buffer size.
     static constexpr unsigned RATE_BUFFERS = RATE_BITS / (8 * sizeof(m_buffer));
@@ -29,12 +30,15 @@ private:
     static_assert(RATE_BITS % (8 * sizeof(m_buffer)) == 0, "Rate must be a multiple of 8 bytes");
 
 public:
-    static constexpr size_t OUTPUT_SIZE = 32;
+    static constexpr size_t OUTPUT_SIZE = 64;
 
-    SHA3_256() = default;
-    SHA3_256& Write(std::span<const unsigned char> data);
-    SHA3_256& Finalize(std::span<unsigned char> output);
-    SHA3_256& Reset();
+    SHA3_512() = default;
+    SHA3_512& Write(std::span<const unsigned char> data);
+    SHA3_512& Finalize(std::span<unsigned char> output);
+    SHA3_512& Reset();
 };
 
-#endif // BITCOIN_CRYPTO_SHA3_H
+// Alias for backwards compatibility and easier usage
+using CSHA3_512 = SHA3_512;
+
+#endif // QTC_CRYPTO_SHA3_H

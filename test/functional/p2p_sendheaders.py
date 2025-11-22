@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-# Copyright (c) 2014-2021 The Bitcoin Core developers
+# Copyright (c) 2014-2021 The Quantum Coin Core developers
 # Distributed under the MIT software license, see the accompanying
 # file COPYING or http://www.opensource.org/licenses/mit-license.php.
 """Test behavior of headers messages to announce blocks.
@@ -95,7 +95,7 @@ from test_framework.p2p import (
     msg_inv,
     msg_sendheaders,
 )
-from test_framework.test_framework import BitcoinTestFramework
+from test_framework.test_framework import Quantum CoinTestFramework
 from test_framework.util import (
     assert_equal,
 )
@@ -150,9 +150,10 @@ class BaseNode(P2PInterface):
         if len(message.headers):
             self.block_announced = True
             for x in message.headers:
+                x.calc_sha256()
                 # append because headers may be announced over multiple messages.
-                self.recent_headers_announced.append(x.hash_int)
-            self.last_blockhash_announced = message.headers[-1].hash_int
+                self.recent_headers_announced.append(x.sha256)
+            self.last_blockhash_announced = message.headers[-1].sha256
 
     def clear_block_announcements(self):
         with p2p_lock:
@@ -188,7 +189,7 @@ class BaseNode(P2PInterface):
             self.block_announced = False
             self.last_message.pop("inv", None)
 
-class SendHeadersTest(BitcoinTestFramework):
+class SendHeadersTest(Quantum CoinTestFramework):
     def set_test_params(self):
         self.setup_clean_chain = True
         self.num_nodes = 2
@@ -247,12 +248,12 @@ class SendHeadersTest(BitcoinTestFramework):
         block.solve()
         test_node.send_header_for_blocks([block])
         test_node.clear_block_announcements()
-        test_node.send_get_headers(locator=[], hashstop=block.hash_int)
+        test_node.send_get_headers(locator=[], hashstop=int(block.hash, 16))
         test_node.sync_with_ping()
         assert_equal(test_node.block_announced, False)
         inv_node.clear_block_announcements()
         test_node.send_without_ping(msg_block(block))
-        inv_node.check_last_inv_announcement(inv=[block.hash_int])
+        inv_node.check_last_inv_announcement(inv=[int(block.hash, 16)])
 
     def test_nonnull_locators(self, test_node, inv_node):
         tip = int(self.nodes[0].getbestblockhash(), 16)
@@ -286,7 +287,7 @@ class SendHeadersTest(BitcoinTestFramework):
                 new_block = create_block(tip, create_coinbase(height + 1), block_time)
                 new_block.solve()
                 test_node.send_header_for_blocks([new_block])
-                test_node.wait_for_getdata([new_block.hash_int])
+                test_node.wait_for_getdata([new_block.sha256])
                 test_node.send_and_ping(msg_block(new_block))  # make sure this block is processed
                 inv_node.wait_until(lambda: inv_node.block_announced)
                 inv_node.clear_block_announcements()
@@ -322,7 +323,7 @@ class SendHeadersTest(BitcoinTestFramework):
                 for _ in range(i + 1):
                     blocks.append(create_block(tip, create_coinbase(height), block_time))
                     blocks[-1].solve()
-                    tip = blocks[-1].hash_int
+                    tip = blocks[-1].sha256
                     block_time += 1
                     height += 1
                 if j == 0:
@@ -336,13 +337,13 @@ class SendHeadersTest(BitcoinTestFramework):
                     test_node.send_header_for_blocks(blocks)
                     # Test that duplicate inv's won't result in duplicate
                     # getdata requests, or duplicate headers announcements
-                    [inv_node.send_block_inv(x.hash_int) for x in blocks]
-                    test_node.wait_for_getdata([x.hash_int for x in blocks])
+                    [inv_node.send_block_inv(x.sha256) for x in blocks]
+                    test_node.wait_for_getdata([x.sha256 for x in blocks])
                     inv_node.sync_with_ping()
                 else:
                     # Announce via headers
                     test_node.send_header_for_blocks(blocks)
-                    test_node.wait_for_getdata([x.hash_int for x in blocks])
+                    test_node.wait_for_getdata([x.sha256 for x in blocks])
                     # Test that duplicate headers won't result in duplicate
                     # getdata requests (the check is further down)
                     inv_node.send_header_for_blocks(blocks)
@@ -440,7 +441,7 @@ class SendHeadersTest(BitcoinTestFramework):
         for _ in range(2):
             blocks.append(create_block(tip, create_coinbase(height), block_time))
             blocks[-1].solve()
-            tip = blocks[-1].hash_int
+            tip = blocks[-1].sha256
             block_time += 1
             height += 1
             inv_node.send_without_ping(msg_block(blocks[-1]))
@@ -458,20 +459,20 @@ class SendHeadersTest(BitcoinTestFramework):
         for _ in range(3):
             blocks.append(create_block(tip, create_coinbase(height), block_time))
             blocks[-1].solve()
-            tip = blocks[-1].hash_int
+            tip = blocks[-1].sha256
             block_time += 1
             height += 1
 
         test_node.send_header_for_blocks(blocks)
         test_node.sync_with_ping()
-        test_node.wait_for_getdata([x.hash_int for x in blocks], timeout=DIRECT_FETCH_RESPONSE_TIME)
+        test_node.wait_for_getdata([x.sha256 for x in blocks], timeout=DIRECT_FETCH_RESPONSE_TIME)
 
         [test_node.send_without_ping(msg_block(x)) for x in blocks]
 
         test_node.sync_with_ping()
 
         # Now announce a header that forks the last two blocks
-        tip = blocks[0].hash_int
+        tip = blocks[0].sha256
         height -= 2
         blocks = []
 
@@ -479,7 +480,7 @@ class SendHeadersTest(BitcoinTestFramework):
         for _ in range(20):
             blocks.append(create_block(tip, create_coinbase(height), block_time))
             blocks[-1].solve()
-            tip = blocks[-1].hash_int
+            tip = blocks[-1].sha256
             block_time += 1
             height += 1
 
@@ -495,13 +496,13 @@ class SendHeadersTest(BitcoinTestFramework):
         # both blocks (same work as tip)
         test_node.send_header_for_blocks(blocks[1:2])
         test_node.sync_with_ping()
-        test_node.wait_for_getdata([x.hash_int for x in blocks[0:2]], timeout=DIRECT_FETCH_RESPONSE_TIME)
+        test_node.wait_for_getdata([x.sha256 for x in blocks[0:2]], timeout=DIRECT_FETCH_RESPONSE_TIME)
 
         # Announcing 16 more headers should trigger direct fetch for 14 more
         # blocks
         test_node.send_header_for_blocks(blocks[2:18])
         test_node.sync_with_ping()
-        test_node.wait_for_getdata([x.hash_int for x in blocks[2:16]], timeout=DIRECT_FETCH_RESPONSE_TIME)
+        test_node.wait_for_getdata([x.sha256 for x in blocks[2:16]], timeout=DIRECT_FETCH_RESPONSE_TIME)
 
         # Announcing 1 more header should not trigger any response
         test_node.last_message.pop("getdata", None)
@@ -528,18 +529,18 @@ class SendHeadersTest(BitcoinTestFramework):
             for _ in range(2):
                 blocks.append(create_block(tip, create_coinbase(height), block_time))
                 blocks[-1].solve()
-                tip = blocks[-1].hash_int
+                tip = blocks[-1].sha256
                 block_time += 1
                 height += 1
             # Send the header of the second block -> this won't connect.
             test_node.send_header_for_blocks([blocks[1]])
             test_node.wait_for_getheaders(block_hash=expected_hash)
             test_node.send_header_for_blocks(blocks)
-            test_node.wait_for_getdata([x.hash_int for x in blocks])
+            test_node.wait_for_getdata([x.sha256 for x in blocks])
             [test_node.send_without_ping(msg_block(x)) for x in blocks]
             test_node.sync_with_ping()
-            assert_equal(self.nodes[0].getbestblockhash(), blocks[1].hash_hex)
-            expected_hash = blocks[1].hash_int
+            assert_equal(int(self.nodes[0].getbestblockhash(), 16), blocks[1].sha256)
+            expected_hash = blocks[1].sha256
 
         blocks = []
         # Now we test that if we repeatedly don't send connecting headers, we
@@ -547,7 +548,7 @@ class SendHeadersTest(BitcoinTestFramework):
         for _ in range(NUM_HEADERS + 1):
             blocks.append(create_block(tip, create_coinbase(height), block_time))
             blocks[-1].solve()
-            tip = blocks[-1].hash_int
+            tip = blocks[-1].sha256
             block_time += 1
             height += 1
 

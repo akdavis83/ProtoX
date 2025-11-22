@@ -1,12 +1,12 @@
 // Copyright (c) 2009-2010 Satoshi Nakamoto
-// Copyright (c) 2009-present The Bitcoin Core developers
+// Copyright (c) 2009-present The QTC Core developers
 // Distributed under the MIT software license, see the accompanying
 // file COPYING or http://www.opensource.org/licenses/mit-license.php.
 
 // The Solver functions are used by policy and the wallet, but not consensus.
 
-#ifndef BITCOIN_SCRIPT_SOLVER_H
-#define BITCOIN_SCRIPT_SOLVER_H
+#ifndef QTC_SCRIPT_SOLVER_H
+#define QTC_SCRIPT_SOLVER_H
 
 #include <attributes.h>
 #include <script/script.h>
@@ -32,6 +32,12 @@ enum class TxoutType {
     WITNESS_V0_KEYHASH,
     WITNESS_V1_TAPROOT,
     WITNESS_UNKNOWN, //!< Only for Witness versions not already defined above
+    
+    // QTC Quantum-Safe Script Types
+    QUANTUM_KEYHASH,        //!< P2QKH - Pay to Quantum Key Hash (32-byte SHA3)
+    QUANTUM_SCRIPTHASH,     //!< P2QSH - Pay to Quantum Script Hash (32-byte SHA3)
+    WITNESS_V2_QKEYHASH,    //!< P2WQKH - Pay to Witness Quantum Key Hash
+    WITNESS_V3_QUANTUM,     //!< QTC Native SegWit v3 (quantum-safe witness)
 };
 
 /** Get the name of a TxoutType as a string */
@@ -64,4 +70,4 @@ std::optional<std::pair<int, std::vector<std::span<const unsigned char>>>> Match
 /** Generate a multisig script. */
 CScript GetScriptForMultisig(int nRequired, const std::vector<CPubKey>& keys);
 
-#endif // BITCOIN_SCRIPT_SOLVER_H
+#endif // QTC_SCRIPT_SOLVER_H

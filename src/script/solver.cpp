@@ -1,5 +1,5 @@
 // Copyright (c) 2009-2010 Satoshi Nakamoto
-// Copyright (c) 2009-present The Bitcoin Core developers
+// Copyright (c) 2009-present The QTC Core developers
 // Distributed under the MIT software license, see the accompanying
 // file COPYING or http://www.opensource.org/licenses/mit-license.php.
 
@@ -29,6 +29,12 @@ std::string GetTxnOutputType(TxoutType t)
     case TxoutType::WITNESS_V0_SCRIPTHASH: return "witness_v0_scripthash";
     case TxoutType::WITNESS_V1_TAPROOT: return "witness_v1_taproot";
     case TxoutType::WITNESS_UNKNOWN: return "witness_unknown";
+    
+    // QTC Quantum-Safe Script Types
+    case TxoutType::QUANTUM_KEYHASH: return "quantum_keyhash";
+    case TxoutType::QUANTUM_SCRIPTHASH: return "quantum_scripthash";
+    case TxoutType::WITNESS_V2_QKEYHASH: return "witness_v2_qkeyhash";
+    case TxoutType::WITNESS_V3_QUANTUM: return "witness_v3_quantum";
     } // no default case, so the compiler can warn about missing cases
     assert(false);
 }
@@ -166,6 +172,15 @@ TxoutType Solver(const CScript& scriptPubKey, std::vector<std::vector<unsigned c
             vSolutionsRet.push_back(std::move(witnessprogram));
             return TxoutType::WITNESS_V1_TAPROOT;
         }
+        // QTC Quantum-Safe Witness Programs
+        if (witnessversion == 2 && witnessprogram.size() == 32) {
+            vSolutionsRet.push_back(std::move(witnessprogram));
+            return TxoutType::WITNESS_V2_QKEYHASH;
+        }
+        if (witnessversion == 3 && witnessprogram.size() >= 32) {
+            vSolutionsRet.push_back(std::move(witnessprogram));
+            return TxoutType::WITNESS_V3_QUANTUM;
+        }
         if (scriptPubKey.IsPayToAnchor()) {
             return TxoutType::ANCHOR;
         }
@@ -204,6 +219,22 @@ TxoutType Solver(const CScript& scriptPubKey, std::vector<std::vector<unsigned c
         vSolutionsRet.insert(vSolutionsRet.end(), keys.begin(), keys.end());
         vSolutionsRet.push_back({static_cast<unsigned char>(keys.size())}); // safe as size is in range 1..20
         return TxoutType::MULTISIG;
+    }
+
+    // QTC Quantum-Safe Script Pattern Recognition
+    // P2QKH: OP_DUP OP_QHASH <32-byte hash> OP_EQUALVERIFY OP_QCHECKSIG
+    if (scriptPubKey.size() == 37 && scriptPubKey[0] == OP_DUP && scriptPubKey[1] == OP_QHASH && 
+        scriptPubKey[2] == 32 && scriptPubKey[35] == OP_EQUALVERIFY && scriptPubKey[36] == OP_QCHECKSIG) {
+        std::vector<unsigned char> hash(scriptPubKey.begin() + 3, scriptPubKey.begin() + 35);
+        vSolutionsRet.push_back(hash);
+        return TxoutType::QUANTUM_KEYHASH;
+    }
+    
+    // P2QSH: OP_QHASH <32-byte hash> OP_EQUAL
+    if (scriptPubKey.size() == 35 && scriptPubKey[0] == OP_QHASH && scriptPubKey[1] == 32 && scriptPubKey[34] == OP_EQUAL) {
+        std::vector<unsigned char> hash(scriptPubKey.begin() + 2, scriptPubKey.begin() + 34);
+        vSolutionsRet.push_back(hash);
+        return TxoutType::QUANTUM_SCRIPTHASH;
     }
 
     vSolutionsRet.clear();

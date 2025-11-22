@@ -1,4 +1,4 @@
-// Copyright (c) 2011-present The Bitcoin Core developers
+// Copyright (c) 2011-present The QTC Core developers
 // Distributed under the MIT software license, see the accompanying
 // file COPYING or http://www.opensource.org/licenses/mit-license.php.
 
@@ -11,7 +11,6 @@
 #include <wallet/context.h>
 #include <wallet/wallet.h>
 
-#include <optional>
 #include <string_view>
 #include <univalue.h>
 
@@ -30,25 +29,19 @@ bool GetAvoidReuseFlag(const CWallet& wallet, const UniValue& param) {
     return avoid_reuse;
 }
 
-std::string EnsureUniqueWalletName(const JSONRPCRequest& request, std::optional<std::string_view> wallet_name)
+/** Used by RPC commands that have an include_watchonly parameter.
+ *  We default to true for watchonly wallets if include_watchonly isn't
+ *  explicitly set.
+ */
+bool ParseIncludeWatchonly(const UniValue& include_watchonly, const CWallet& wallet)
 {
-    std::string endpoint_wallet;
-    if (GetWalletNameFromJSONRPCRequest(request, endpoint_wallet)) {
-        // wallet endpoint was used
-        if (wallet_name && *wallet_name != endpoint_wallet) {
-            throw JSONRPCError(RPC_INVALID_PARAMETER,
-                "The RPC endpoint wallet and the wallet name parameter specify different wallets");
-        }
-        return endpoint_wallet;
+    if (include_watchonly.isNull()) {
+        // if include_watchonly isn't explicitly set, then check if we have a watchonly wallet
+        return wallet.IsWalletFlagSet(WALLET_FLAG_DISABLE_PRIVATE_KEYS);
     }
 
-    // Not a wallet endpoint; parameter must be provided
-    if (!wallet_name) {
-        throw JSONRPCError(RPC_INVALID_PARAMETER,
-            "Either the RPC endpoint wallet or the wallet name parameter must be provided");
-    }
-
-    return std::string{*wallet_name};
+    // otherwise return whatever include_watchonly was set to
+    return include_watchonly.get_bool();
 }
 
 bool GetWalletNameFromJSONRPCRequest(const JSONRPCRequest& request, std::string& wallet_name)

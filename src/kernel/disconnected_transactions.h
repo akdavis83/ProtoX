@@ -1,9 +1,9 @@
-// Copyright (c) 2023 The Bitcoin Core developers
+// Copyright (c) 2023 The QTC Core developers
 // Distributed under the MIT software license, see the accompanying
 // file COPYING or http://www.opensource.org/licenses/mit-license.php.
 
-#ifndef BITCOIN_KERNEL_DISCONNECTED_TRANSACTIONS_H
-#define BITCOIN_KERNEL_DISCONNECTED_TRANSACTIONS_H
+#ifndef QTC_KERNEL_DISCONNECTED_TRANSACTIONS_H
+#define QTC_KERNEL_DISCONNECTED_TRANSACTIONS_H
 
 #include <primitives/transaction.h>
 #include <util/hasher.h>
@@ -41,7 +41,7 @@ private:
     const size_t m_max_mem_usage;
     std::list<CTransactionRef> queuedTx;
     using TxList = decltype(queuedTx);
-    std::unordered_map<Txid, TxList::iterator, SaltedTxidHasher> iters_by_txid;
+    std::unordered_map<uint256, TxList::iterator, SaltedTxidHasher> iters_by_txid;
 
     /** Trim the earliest-added entries until we are within memory bounds. */
     std::vector<CTransactionRef> LimitMemoryUsage();
@@ -73,4 +73,4 @@ public:
     /** Clear all data structures and return the list of transactions. */
     std::list<CTransactionRef> take();
 };
-#endif // BITCOIN_KERNEL_DISCONNECTED_TRANSACTIONS_H
+#endif // QTC_KERNEL_DISCONNECTED_TRANSACTIONS_H

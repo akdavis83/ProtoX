@@ -1,4 +1,4 @@
-// Copyright (c) 2020-present The Bitcoin Core developers
+// Copyright (c) 2020-present The QTC Core developers
 // Distributed under the MIT software license, see the accompanying
 // file COPYING or http://www.opensource.org/licenses/mit-license.php.
 
@@ -71,15 +71,6 @@ void ConnmanTestMsg::Handshake(CNode& node,
     }
 }
 
-void ConnmanTestMsg::ResetAddrCache() { m_addr_response_caches = {}; }
-
-void ConnmanTestMsg::ResetMaxOutboundCycle()
-{
-    LOCK(m_total_bytes_sent_mutex);
-    nMaxOutboundCycleStartTime = 0s;
-    nMaxOutboundTotalBytesSentInCycle = 0;
-}
-
 void ConnmanTestMsg::NodeReceiveMsgBytes(CNode& node, std::span<const uint8_t> msg_bytes, bool& complete) const
 {
     assert(node.ReceiveMsgBytes(msg_bytes, complete));
@@ -116,7 +107,7 @@ bool ConnmanTestMsg::ReceiveMsgFrom(CNode& node, CSerializedNetMsg&& ser_msg) co
 
 CNode* ConnmanTestMsg::ConnectNodePublic(PeerManager& peerman, const char* pszDest, ConnectionType conn_type)
 {
-    CNode* node = ConnectNode(CAddress{}, pszDest, /*fCountFailure=*/false, conn_type, /*use_v2transport=*/true, /*proxy_override=*/std::nullopt);
+    CNode* node = ConnectNode(CAddress{}, pszDest, /*fCountFailure=*/false, conn_type, /*use_v2transport=*/true);
     if (!node) return nullptr;
     node->SetCommonVersion(PROTOCOL_VERSION);
     peerman.InitializeNode(*node, ServiceFlags(NODE_NETWORK | NODE_WITNESS));

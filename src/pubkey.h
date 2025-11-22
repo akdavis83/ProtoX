@@ -1,11 +1,11 @@
 // Copyright (c) 2009-2010 Satoshi Nakamoto
-// Copyright (c) 2009-present The Bitcoin Core developers
+// Copyright (c) 2009-present The QTC Core developers
 // Copyright (c) 2017 The Zcash developers
 // Distributed under the MIT software license, see the accompanying
 // file COPYING or http://www.opensource.org/licenses/mit-license.php.
 
-#ifndef BITCOIN_PUBKEY_H
-#define BITCOIN_PUBKEY_H
+#ifndef QTC_PUBKEY_H
+#define QTC_PUBKEY_H
 
 #include <hash.h>
 #include <serialize.h>
@@ -16,8 +16,24 @@
 #include <optional>
 #include <vector>
 
+// QTC Quantum-Safe Cryptography Forward Declarations
+namespace qtc {
+    class QKyberPublicKey;
+    class QDilithiumPublicKey; 
+    class QDilithiumSignature;
+    struct QCiphertext;
+    struct QCommitment;
+}
+
 const unsigned int BIP32_EXTKEY_SIZE = 74;
 const unsigned int BIP32_EXTKEY_WITH_VERSION_SIZE = 78;
+
+// QTC Post-Quantum Key Sizes
+const unsigned int KYBER1024_PUBKEY_SIZE = 1568;
+const unsigned int KYBER1024_CIPHERTEXT_SIZE = 1568;
+const unsigned int DILITHIUM5_PUBKEY_SIZE = 2592;
+const unsigned int DILITHIUM5_SIGNATURE_SIZE = 4595;
+const unsigned int QTC_PUBKEY_HASH_SIZE = 64; // SHA3-512 hash of PQ pubkey
 
 /** A reference to a CKey: the Hash160 of its serialized public key */
 class CKeyID : public uint160
@@ -25,6 +41,14 @@ class CKeyID : public uint160
 public:
     CKeyID() : uint160() {}
     explicit CKeyID(const uint160& in) : uint160(in) {}
+};
+
+/** A reference to a Quantum Key: SHA3-256 hash of post-quantum public key */
+class QKeyID : public uint256
+{
+public:
+    QKeyID() : uint256() {}
+    explicit QKeyID(const uint256& in) : uint256(in) {}
 };
 
 typedef uint256 ChainCode;
@@ -224,7 +248,7 @@ public:
     bool Decompress();
 
     //! Derive BIP32 child pubkey.
-    [[nodiscard]] bool Derive(CPubKey& pubkeyChild, ChainCode &ccChild, unsigned int nChild, const ChainCode& cc, uint256* bip32_tweak_out = nullptr) const;
+    [[nodiscard]] bool Derive(CPubKey& pubkeyChild, ChainCode &ccChild, unsigned int nChild, const ChainCode& cc) const;
 };
 
 class XOnlyPubKey
@@ -283,13 +307,9 @@ public:
     std::optional<std::pair<XOnlyPubKey, bool>> CreateTapTweak(const uint256* merkle_root) const;
 
     /** Returns a list of CKeyIDs for the CPubKeys that could have been used to create this XOnlyPubKey.
-     * As the CKeyID is the Hash160(full pubkey), the produced CKeyIDs are for the versions of this
-     * XOnlyPubKey with 0x02 and 0x03 prefixes.
      * This is needed for key lookups since keys are indexed by CKeyID.
      */
     std::vector<CKeyID> GetKeyIDs() const;
-    /** Returns this XOnlyPubKey with 0x02 and 0x03 prefixes */
-    std::vector<CPubKey> GetCPubKeys() const;
 
     CPubKey GetEvenCorrespondingCPubKey() const;
 
@@ -379,7 +399,66 @@ struct CExtPubKey {
     void Decode(const unsigned char code[BIP32_EXTKEY_SIZE]);
     void EncodeWithVersion(unsigned char code[BIP32_EXTKEY_WITH_VERSION_SIZE]) const;
     void DecodeWithVersion(const unsigned char code[BIP32_EXTKEY_WITH_VERSION_SIZE]);
-    [[nodiscard]] bool Derive(CExtPubKey& out, unsigned int nChild, uint256* bip32_tweak_out = nullptr) const;
+    [[nodiscard]] bool Derive(CExtPubKey& out, unsigned int nChild) const;
 };
 
-#endif // BITCOIN_PUBKEY_H
+/** QTC Quantum-Safe Public Key (Compressed Format)
+ * Stores only SHA3-512 hash of full post-quantum public key
+ * Full key retrieved from off-chain storage when needed
+ */
+class QCompressedPubKey
+{
+private:
+    std::array<uint8_t, 64> m_hash; // SHA3-512 hash of full PQ pubkey
+    
+public:
+    static const size_t COMPRESSED_SIZE = 32;
+    
+    QCompressedPubKey() = default;
+    explicit QCompressedPubKey(const uint256& hash) : m_hash(hash) {}
+    
+    // Construct from full post-quantum public key (hash it)
+    explicit QCompressedPubKey(const std::vector<unsigned char>& full_pubkey);
+    
+    const uint256& GetHash() const { return m_hash; }
+    QKeyID GetQKeyID() const { return QKeyID(m_hash); }
+    
+    bool IsValid() const { return !m_hash.IsNull(); }
+    
+    // Serialization
+    SERIALIZE_METHODS(QCompressedPubKey, obj) { READWRITE(obj.m_hash); }
+    
+    friend bool operator==(const QCompressedPubKey& a, const QCompressedPubKey& b) {
+        return a.m_hash == b.m_hash;
+    }
+    friend bool operator<(const QCompressedPubKey& a, const QCompressedPubKey& b) {
+        return a.m_hash < b.m_hash;
+    }
+};
+
+/** QTC Ciphertext Commitment (Off-chain storage reference)
+ * Stores only commitment hash, actual ciphertext stored off-chain
+ */
+struct QCiphertextCommitment
+{
+    std::array<uint8_t, 64> commitment_hash; // SHA3-512(ciphertext || nonce)
+    uint32_t storage_index;  // Index in off-chain storage
+    
+    QCiphertextCommitment() : storage_index(0) {}
+    QCiphertextCommitment(const std::array<uint8_t, 64>& hash, uint32_t index) 
+        : commitment_hash(hash), storage_index(index) {}
+    
+    bool IsValid() const { 
+        return std::any_of(commitment_hash.begin(), commitment_hash.end(), [](uint8_t b) { return b != 0; });
+    }
+    
+    SERIALIZE_METHODS(QCiphertextCommitment, obj) { 
+        READWRITE(obj.commitment_hash, obj.storage_index); 
+    }
+    
+    friend bool operator==(const QCiphertextCommitment& a, const QCiphertextCommitment& b) {
+        return a.commitment_hash == b.commitment_hash && a.storage_index == b.storage_index;
+    }
+};
+
+#endif // QTC_PUBKEY_H

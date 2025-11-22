@@ -1,4 +1,4 @@
-# Copyright (c) 2023-present The Bitcoin Core developers
+# Copyright (c) 2023-present The Quantum Coin Core developers
 # Distributed under the MIT software license, see the accompanying
 # file COPYING or https://opensource.org/license/mit/.
 
@@ -26,8 +26,8 @@ get_directory_property(precious_variables CACHE_VARIABLES)
 #=============================
 # Project / Package metadata
 #=============================
-set(CLIENT_NAME "Bitcoin Core")
-set(CLIENT_VERSION_MAJOR 30)
+set(CLIENT_NAME "QTC Core")
+set(CLIENT_VERSION_MAJOR 29)
 set(CLIENT_VERSION_MINOR 99)
 set(CLIENT_VERSION_BUILD 0)
 set(CLIENT_VERSION_RC 0)
@@ -50,10 +50,10 @@ set(CMAKE_TRY_COMPILE_PLATFORM_VARIABLES
   CMAKE_CXX_LINK_EXECUTABLE
 )
 
-project(BitcoinCore
+project(QTCCore
   VERSION ${CLIENT_VERSION_MAJOR}.${CLIENT_VERSION_MINOR}.${CLIENT_VERSION_BUILD}
-  DESCRIPTION "Bitcoin client software"
-  HOMEPAGE_URL "https://bitcoincore.org/"
+  DESCRIPTION "Quantum Coin client software"
+  HOMEPAGE_URL "https://qtccore.org/"
   LANGUAGES NONE
 )
 
@@ -64,7 +64,7 @@ endif()
 
 set(COPYRIGHT_HOLDERS "The %s developers")
 set(COPYRIGHT_HOLDERS_FINAL "The ${CLIENT_NAME} developers")
-set(CLIENT_BUGREPORT "https://github.com/bitcoin/bitcoin/issues")
+set(CLIENT_BUGREPORT "https://github.com/qtc/qtc/issues")
 
 #=============================
 # Language setup
@@ -93,19 +93,25 @@ endif()
 # Configurable options
 #=============================
 include(CMakeDependentOption)
+# Phase 3: PQ Noise-only transport build toggle
+option(ENABLE_PQ_NOISE "Enable PQ Noise-only transport" ON)
+
+# Improve FetchContent behavior: cache downloads in a stable directory
+if(NOT DEFINED FETCHCONTENT_BASE_DIR)
+  set(FETCHCONTENT_BASE_DIR "${CMAKE_BINARY_DIR}/_deps" CACHE PATH "" FORCE)
+endif()
 # When adding a new option, end the <help_text> with a full stop for consistency.
-option(BUILD_BITCOIN_BIN "Build bitcoin executable." ON)
-option(BUILD_DAEMON "Build bitcoind executable." ON)
-option(BUILD_GUI "Build bitcoin-qt executable." OFF)
-option(BUILD_CLI "Build bitcoin-cli executable." ON)
+option(BUILD_QTC_BIN "Build qtc executable." ON)
+option(BUILD_QTCD_DAEMON "Build qtcd executable." ON)
+option(BUILD_QTC_QT_GUI "Build qtc-qt executable." OFF)
+option(BUILD_QTC_CLI "Build qtc-cli executable." ON)
 
-option(BUILD_TESTS "Build test_bitcoin and other unit test executables." ON)
-option(BUILD_TX "Build bitcoin-tx executable." ${BUILD_TESTS})
-option(BUILD_UTIL "Build bitcoin-util executable." ${BUILD_TESTS})
+option(BUILD_QTC_TESTS "Build test_qtc and other unit test executables." ON)
+option(BUILD_QTC_TX "Build qtc-tx executable." ${BUILD_QTC_TESTS})
+option(BUILD_QTC_UTIL "Build qtc-util executable." ${BUILD_QTC_TESTS})
 
-option(BUILD_UTIL_CHAINSTATE "Build experimental bitcoin-chainstate executable." OFF)
-option(BUILD_KERNEL_LIB "Build experimental bitcoinkernel library." ${BUILD_UTIL_CHAINSTATE})
-option(BUILD_KERNEL_TEST "Build tests for the experimental bitcoinkernel library." ${BUILD_KERNEL_LIB})
+option(BUILD_QTC_CHAINSTATE "Build experimental qtc-chainstate executable." OFF)
+option(BUILD_QTC_KERNEL_LIB "Build experimental qtckernel library." ${BUILD_QTC_CHAINSTATE})
 
 option(ENABLE_WALLET "Enable wallet." ON)
 if(ENABLE_WALLET)
@@ -116,7 +122,7 @@ if(ENABLE_WALLET)
     find_package(SQLite3 3.7.17 REQUIRED)
   endif()
 endif()
-cmake_dependent_option(BUILD_WALLET_TOOL "Build bitcoin-wallet tool." ${BUILD_TESTS} "ENABLE_WALLET" OFF)
+cmake_dependent_option(BUILD_QTC_WALLET_TOOL "Build qtc-wallet tool." ${BUILD_QTC_TESTS} "ENABLE_WALLET" OFF)
 
 option(REDUCE_EXPORTS "Attempt to reduce exported symbols in the resulting executables." OFF)
 option(WERROR "Treat compiler warnings as errors." OFF)
@@ -142,7 +148,7 @@ endif()
 
 cmake_dependent_option(WITH_DBUS "Enable DBus support." ON "NOT CMAKE_SYSTEM_NAME MATCHES \"(Windows|Darwin)\" AND BUILD_GUI" OFF)
 
-cmake_dependent_option(ENABLE_IPC "Build multiprocess bitcoin-node and bitcoin-gui executables in addition to monolithic bitcoind and bitcoin-qt executables." ON "NOT WIN32" OFF)
+option(ENABLE_IPC "Build multiprocess qtc-node and qtc-gui executables in addition to monolithic qtcd and qtc-qt executables. Requires libmultiprocess library. Experimental." OFF)
 cmake_dependent_option(WITH_EXTERNAL_LIBMULTIPROCESS "Build with external libmultiprocess library instead of with local git subtree when ENABLE_IPC is enabled. This is not normally recommended, but can be useful for developing libmultiprocess itself." OFF "ENABLE_IPC" OFF)
 if(ENABLE_IPC AND WITH_EXTERNAL_LIBMULTIPROCESS)
   find_package(Libmultiprocess REQUIRED COMPONENTS Lib)
@@ -151,7 +157,7 @@ if(ENABLE_IPC AND WITH_EXTERNAL_LIBMULTIPROCESS)
   )
 endif()
 
-cmake_dependent_option(BUILD_GUI_TESTS "Build test_bitcoin-qt executable." ON "BUILD_GUI;BUILD_TESTS" OFF)
+cmake_dependent_option(BUILD_GUI_TESTS "Build test_qtc-qt executable." ON "BUILD_GUI;BUILD_TESTS" OFF)
 if(BUILD_GUI)
   set(qt_components Core Gui Widgets LinguistTools)
   if(ENABLE_WALLET)
@@ -170,8 +176,8 @@ if(BUILD_GUI)
   unset(qt_components)
 endif()
 
-option(BUILD_BENCH "Build bench_bitcoin executable." OFF)
-option(BUILD_FUZZ_BINARY "Build fuzz binary." OFF)
+option(BUILD_BENCH_QTC "Build bench_qtc executable." OFF)
+option(BUILD_FUZZ_QTC_BINARY "Build fuzz qtc binary." OFF)
 option(BUILD_FOR_FUZZING "Build for fuzzing. Enabling this will disable all other targets and override BUILD_FUZZ_BINARY." OFF)
 
 option(INSTALL_MAN "Install man pages." ON)
@@ -203,24 +209,22 @@ target_link_libraries(core_interface INTERFACE
 )
 
 if(BUILD_FOR_FUZZING)
-  message(WARNING "BUILD_FOR_FUZZING=ON will disable all other targets and force BUILD_FUZZ_BINARY=ON.")
-  set(BUILD_BITCOIN_BIN OFF)
-  set(BUILD_DAEMON OFF)
-  set(BUILD_CLI OFF)
-  set(BUILD_TX OFF)
-  set(BUILD_UTIL OFF)
-  set(BUILD_UTIL_CHAINSTATE OFF)
-  set(BUILD_KERNEL_LIB OFF)
-  set(BUILD_KERNEL_TEST OFF)
-  set(BUILD_WALLET_TOOL OFF)
-  set(BUILD_GUI OFF)
+  message(WARNING "BUILD_FOR_FUZZING=ON will disable all other targets and force BUILD_FUZZ_QTC_BINARY=ON.")
+  set(BUILD_QTC_BIN OFF)
+  set(BUILD_QTCD_DAEMON OFF)
+  set(BUILD_QTC_CLI OFF)
+  set(BUILD_QTC_TX OFF)
+  set(BUILD_QTC_UTIL OFF)
+  set(BUILD_QTC_CHAINSTATE OFF)
+  set(BUILD_QTC_KERNEL_LIB OFF)
+  set(BUILD_QTC_WALLET_TOOL OFF)
+  set(BUILD_QTC_QT_GUI OFF)
   set(ENABLE_EXTERNAL_SIGNER OFF)
   set(WITH_ZMQ OFF)
-  set(BUILD_TESTS OFF)
+  set(BUILD_QTC_TESTS OFF)
   set(BUILD_GUI_TESTS OFF)
-  set(BUILD_BENCH OFF)
-  set(ENABLE_IPC OFF)
-  set(BUILD_FUZZ_BINARY ON)
+  set(BUILD_BENCH_QTC OFF)
+  set(BUILD_FUZZ_QTC_BINARY ON)
 
   target_compile_definitions(core_interface INTERFACE
     FUZZING_BUILD_MODE_UNSAFE_FOR_PRODUCTION
@@ -309,7 +313,7 @@ if(WIN32)
 
   # Workaround producing large object files, which cannot be handled by the assembler.
   # More likely to happen with no, or lower levels of optimisation.
-  # See discussion in https://github.com/bitcoin/bitcoin/issues/28109.
+  # See discussion in https://github.com/qtc/qtc/issues/28109.
   if(CMAKE_CXX_COMPILER_ID STREQUAL "MSVC")
     try_append_cxx_flags("/bigobj" TARGET core_interface_debug SKIP_LINK)
   else()
@@ -342,6 +346,54 @@ find_package(Threads REQUIRED)
 target_link_libraries(core_interface INTERFACE
   Threads::Threads
 )
+
+# Find the OQS C++ wrapper library (prefer system, fallback to FetchContent)
+include(FetchContent)
+find_package(oqs QUIET)
+if(NOT oqs_FOUND)
+  message(STATUS "liboqs not found via package manager; fetching from source...")
+  FetchContent_Declare(liboqs
+    URL https://github.com/open-quantum-safe/liboqs/archive/refs/tags/0.9.0.tar.gz
+    # TODO: Add URL_HASH for integrity pinning
+  )
+  set(OQS_BUILD_ONLY_LIB ON CACHE BOOL "" FORCE)
+  set(OQS_DIST_BUILD ON CACHE BOOL "" FORCE)
+  set(OQS_USE_OPENSSL OFF CACHE BOOL "" FORCE)
+  set(OQS_BUILD_SHARED OFF CACHE BOOL "" FORCE)
+  set(OQS_BUILD_TESTS OFF CACHE BOOL "" FORCE)
+  FetchContent_MakeAvailable(liboqs)
+  if(TARGET oqs)
+    add_library(oqs::oqs ALIAS oqs)
+  else()
+    message(FATAL_ERROR "liboqs sources fetched but target 'oqs' not defined.")
+  endif()
+endif()
+
+# Find the RandomX library (prefer system, fallback to FetchContent)
+include(FetchContent)
+find_package(RandomX QUIET)
+if(NOT RandomX_FOUND)
+  message(STATUS "RandomX not found via package manager; fetching from source...")
+  FetchContent_Declare(randomx
+    URL https://github.com/tevador/RandomX/archive/refs/tags/v1.2.1.tar.gz
+    # TODO: Add URL_HASH for integrity pinning
+  )
+  FetchContent_MakeAvailable(randomx)
+  # Expose a unified imported target name
+  if(TARGET randomx)
+    add_library(RandomX::RandomX ALIAS randomx)
+  elseif(TARGET RandomX)
+    add_library(RandomX::RandomX ALIAS RandomX)
+  else()
+    message(FATAL_ERROR "RandomX sources fetched but no expected target ('randomx' or 'RandomX') was defined by the project.")
+  endif()
+endif()
+
+target_link_libraries(core_interface INTERFACE
+  oqs::oqs
+  RandomX::RandomX
+)
+
 
 # Define sanitize_interface with -fsanitize flags intended to apply to all
 # libraries and executables.
@@ -463,8 +515,6 @@ else()
   try_append_cxx_flags("-Wself-assign" TARGET warn_interface SKIP_LINK)
   try_append_cxx_flags("-Wbidi-chars=any" TARGET warn_interface SKIP_LINK)
   try_append_cxx_flags("-Wundef" TARGET warn_interface SKIP_LINK)
-  try_append_cxx_flags("-Wleading-whitespace=spaces" TARGET warn_interface SKIP_LINK)
-  try_append_cxx_flags("-Wtrailing-whitespace=any" TARGET warn_interface SKIP_LINK)
 
   # Some compilers (gcc) ignore unknown -Wno-* options, but warn about all
   # unknown options if any other warning is produced. Test the -Wfoo case, and
@@ -495,8 +545,8 @@ try_append_cxx_flags("-fmacro-prefix-map=A=B" TARGET core_interface SKIP_LINK
   IF_CHECK_PASSED "-fmacro-prefix-map=${PROJECT_SOURCE_DIR}/src=."
 )
 
-# GCC versions 13.2 (and earlier) are subject to a class of bugs, see
-# https://gcc.gnu.org/bugzilla/show_bug.cgi?id=90348 and the meta bug
+# Currently all versions of gcc are subject to a class of bugs, see the
+# gccbug_90348 test case (only reproduces on GCC 11 and earlier) and
 # https://gcc.gnu.org/bugzilla/show_bug.cgi?id=111843. To work around that, set
 # -fstack-reuse=none for all gcc builds. (Only gcc understands this flag).
 try_append_cxx_flags("-fstack-reuse=none" TARGET core_interface)
@@ -550,13 +600,13 @@ else()
   try_append_linker_flag("-Wl,--high-entropy-va" TARGET core_interface)
   try_append_linker_flag("-Wl,-z,relro" TARGET core_interface)
   try_append_linker_flag("-Wl,-z,now" TARGET core_interface)
-  # TODO: This can be dropped once Bitcoin Core no longer supports
+  # TODO: This can be dropped once Quantum Coin Core no longer supports
   #       NetBSD 10.0 or if upstream fix is backported.
   # NetBSD's dynamic linker ld.elf_so < 11.0 supports exactly 2
   # `PT_LOAD` segments and binaries linked with `-z separate-code`
   # have 4 `PT_LOAD` segments.
   # Relevant discussions:
-  # - https://github.com/bitcoin/bitcoin/pull/28724#issuecomment-2589347934
+  # - https://github.com/qtc/qtc/pull/28724#issuecomment-2589347934
   # - https://mail-index.netbsd.org/tech-userlevel/2023/01/05/msg013666.html
   if(CMAKE_SYSTEM_NAME STREQUAL "NetBSD" AND CMAKE_SYSTEM_VERSION VERSION_LESS 11.0)
     try_append_linker_flag("-Wl,-z,noseparate-code" TARGET core_interface)
@@ -595,9 +645,11 @@ set(Python3_FIND_FRAMEWORK LAST CACHE STRING "")
 set(Python3_FIND_UNVERSIONED_NAMES FIRST CACHE STRING "")
 mark_as_advanced(Python3_FIND_FRAMEWORK Python3_FIND_UNVERSIONED_NAMES)
 find_package(Python3 3.10 COMPONENTS Interpreter)
-if(NOT TARGET Python3::Interpreter)
+if(Python3_EXECUTABLE)
+  set(PYTHON_COMMAND ${Python3_EXECUTABLE})
+else()
   list(APPEND configure_warnings
-    "Minimum required Python not found."
+    "Minimum required Python not found. Utils and rpcauth tests are disabled."
   )
 endif()
 
@@ -623,13 +675,32 @@ if(CMAKE_VERSION VERSION_GREATER_EQUAL 3.29)
   set(CMAKE_SKIP_TEST_ALL_DEPENDENCY FALSE)
 endif()
 
+# TODO: The `CMAKE_SKIP_BUILD_RPATH` variable setting can be deleted
+#       in the future after reordering Guix script commands to
+#       perform binary checks after the installation step.
+# Relevant discussions:
+# - https://github.com/hebasto/qtc/pull/236#issuecomment-2183120953
+# - https://github.com/qtc/qtc/pull/30312#issuecomment-2191235833
+# NetBSD always requires runtime paths to be set for executables.
+if(CMAKE_SYSTEM_NAME STREQUAL "NetBSD")
+  set(CMAKE_INSTALL_RPATH_USE_LINK_PATH TRUE)
+else()
+  set(CMAKE_SKIP_BUILD_RPATH TRUE)
+  set(CMAKE_SKIP_INSTALL_RPATH TRUE)
+endif()
 add_subdirectory(test)
 add_subdirectory(doc)
 
 add_subdirectory(src)
 
+# QTC BLAKE3 Library
+add_subdirectory(src/crypto/blake3)
+
+include(cmake/tests.cmake)
+
 include(Maintenance)
 setup_split_debug_script()
+add_maintenance_targets()
 add_windows_deploy_target()
 add_macos_deploy_target()
 
@@ -637,28 +708,27 @@ message("\n")
 message("Configure summary")
 message("=================")
 message("Executables:")
-message("  bitcoin ............................. ${BUILD_BITCOIN_BIN}")
-message("  bitcoind ............................ ${BUILD_DAEMON}")
-if(BUILD_DAEMON AND ENABLE_IPC)
-  set(bitcoin_daemon_status ON)
+message("  qtc ............................. ${BUILD_QTC_BIN}")
+message("  qtcd ............................ ${BUILD_QTCD_DAEMON}")
+if(BUILD_QTCD_DAEMON AND ENABLE_IPC)
+  set(qtc_daemon_status ON)
 else()
-  set(bitcoin_daemon_status OFF)
+  set(qtc_daemon_status OFF)
 endif()
-message("  bitcoin-node (multiprocess) ......... ${bitcoin_daemon_status}")
-message("  bitcoin-qt (GUI) .................... ${BUILD_GUI}")
-if(BUILD_GUI AND ENABLE_IPC)
-  set(bitcoin_gui_status ON)
+message("  qtc-node (multiprocess) ......... ${qtc_daemon_status}")
+message("  qtc-qt (GUI) .................... ${BUILD_QTC_QT_GUI}")
+if(BUILD_QTC_QT_GUI AND ENABLE_IPC)
+  set(qtc_gui_status ON)
 else()
-  set(bitcoin_gui_status OFF)
+  set(qtc_gui_status OFF)
 endif()
-message("  bitcoin-gui (GUI, multiprocess) ..... ${bitcoin_gui_status}")
-message("  bitcoin-cli ......................... ${BUILD_CLI}")
-message("  bitcoin-tx .......................... ${BUILD_TX}")
-message("  bitcoin-util ........................ ${BUILD_UTIL}")
-message("  bitcoin-wallet ...................... ${BUILD_WALLET_TOOL}")
-message("  bitcoin-chainstate (experimental) ... ${BUILD_UTIL_CHAINSTATE}")
-message("  libbitcoinkernel (experimental) ..... ${BUILD_KERNEL_LIB}")
-message("  kernel-test (experimental) .......... ${BUILD_KERNEL_TEST}")
+message("  qtc-gui (GUI, multiprocess) ..... ${qtc_gui_status}")
+message("  qtc-cli ......................... ${BUILD_QTC_CLI}")
+message("  qtc-tx .......................... ${BUILD_QTC_TX}")
+message("  qtc-util ........................ ${BUILD_QTC_UTIL}")
+message("  qtc-wallet ...................... ${BUILD_QTC_WALLET_TOOL}")
+message("  qtc-chainstate (experimental) ... ${BUILD_QTC_CHAINSTATE}")
+message("  libqtckernel (experimental) ..... ${BUILD_QTC_KERNEL_LIB}")
 message("Optional features:")
 message("  wallet support ...................... ${ENABLE_WALLET}")
 message("  external signer ..................... ${ENABLE_EXTERNAL_SIGNER}")
@@ -677,10 +747,10 @@ message("  USDT tracing ........................ ${WITH_USDT}")
 message("  QR code (GUI) ....................... ${WITH_QRENCODE}")
 message("  DBus (GUI) .......................... ${WITH_DBUS}")
 message("Tests:")
-message("  test_bitcoin ........................ ${BUILD_TESTS}")
-message("  test_bitcoin-qt ..................... ${BUILD_GUI_TESTS}")
-message("  bench_bitcoin ....................... ${BUILD_BENCH}")
-message("  fuzz binary ......................... ${BUILD_FUZZ_BINARY}")
+message("  test_qtc ........................ ${BUILD_QTC_TESTS}")
+message("  test_qtc-qt ..................... ${BUILD_GUI_TESTS}")
+message("  bench_qtc ....................... ${BUILD_BENCH_QTC}")
+message("  fuzz qtc binary ......................... ${BUILD_FUZZ_QTC_BINARY}")
 message("")
 if(CMAKE_CROSSCOMPILING)
   set(cross_status "TRUE, for ${CMAKE_SYSTEM_NAME}, ${CMAKE_SYSTEM_PROCESSOR}")

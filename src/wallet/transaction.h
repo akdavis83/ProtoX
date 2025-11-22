@@ -1,16 +1,15 @@
-// Copyright (c) 2021-2022 The Bitcoin Core developers
+// Copyright (c) 2021-2022 The QTC Core developers
 // Distributed under the MIT software license, see the accompanying
 // file COPYING or http://www.opensource.org/licenses/mit-license.php.
 
-#ifndef BITCOIN_WALLET_TRANSACTION_H
-#define BITCOIN_WALLET_TRANSACTION_H
+#ifndef QTC_WALLET_TRANSACTION_H
+#define QTC_WALLET_TRANSACTION_H
 
 #include <attributes.h>
 #include <consensus/amount.h>
 #include <primitives/transaction.h>
 #include <tinyformat.h>
 #include <uint256.h>
-#include <util/check.h>
 #include <util/overloaded.h>
 #include <util/strencodings.h>
 #include <util/string.h>
@@ -128,38 +127,21 @@ std::string TxStateString(const T& state)
 }
 
 /**
- * Cachable amount subdivided into avoid reuse and all balances
+ * Cachable amount subdivided into watchonly and spendable parts.
  */
 struct CachableAmount
 {
-    std::optional<CAmount> m_avoid_reuse_value;
-    std::optional<CAmount> m_all_value;
+    // NO and ALL are never (supposed to be) cached
+    std::bitset<ISMINE_ENUM_ELEMENTS> m_cached;
+    CAmount m_value[ISMINE_ENUM_ELEMENTS];
     inline void Reset()
     {
-        m_avoid_reuse_value.reset();
-        m_all_value.reset();
+        m_cached.reset();
     }
-    void Set(bool avoid_reuse, CAmount value)
+    void Set(isminefilter filter, CAmount value)
     {
-        if (avoid_reuse) {
-            m_avoid_reuse_value = value;
-        } else {
-            m_all_value = value;
-        }
-    }
-    CAmount Get(bool avoid_reuse)
-    {
-        if (avoid_reuse) {
-            Assert(m_avoid_reuse_value.has_value());
-            return m_avoid_reuse_value.value();
-        }
-        Assert(m_all_value.has_value());
-        return m_all_value.value();
-    }
-    bool IsCached(bool avoid_reuse)
-    {
-        if (avoid_reuse) return m_avoid_reuse_value.has_value();
-        return m_all_value.has_value();
+        m_cached.set(filter);
+        m_value[filter] = value;
     }
 };
 
@@ -232,13 +214,11 @@ public:
      * CWallet::ComputeTimeSmart().
      */
     unsigned int nTimeSmart;
-    // Cached value for whether the transaction spends any inputs known to the wallet
-    mutable std::optional<bool> m_cached_from_me{std::nullopt};
     int64_t nOrderPos; //!< position in ordered transaction list
     std::multimap<int64_t, CWalletTx*>::const_iterator m_it_wtxOrdered;
 
     // memory only
-    enum AmountType { DEBIT, CREDIT, AMOUNTTYPE_ENUM_ELEMENTS };
+    enum AmountType { DEBIT, CREDIT, IMMATURE_CREDIT, AVAILABLE_CREDIT, AMOUNTTYPE_ENUM_ELEMENTS };
     mutable CachableAmount m_amounts[AMOUNTTYPE_ENUM_ELEMENTS];
     /**
      * This flag is true if all m_amounts caches are empty. This is particularly
@@ -276,10 +256,6 @@ public:
     // can be nonempty if state is Inactive or
     // BlockConflicted.
     std::set<Txid> mempool_conflicts;
-
-    // Track v3 mempool tx that spends from this tx
-    // so that we don't try to create another unconfirmed child
-    std::optional<Txid> truc_child_in_mempool;
 
     template<typename Stream>
     void Serialize(Stream& s) const
@@ -339,9 +315,10 @@ public:
     {
         m_amounts[DEBIT].Reset();
         m_amounts[CREDIT].Reset();
+        m_amounts[IMMATURE_CREDIT].Reset();
+        m_amounts[AVAILABLE_CREDIT].Reset();
         fChangeCached = false;
         m_is_cache_empty = true;
-        m_cached_from_me = std::nullopt;
     }
 
     /** True if only scriptSigs are different */
@@ -385,25 +362,6 @@ struct WalletTxOrderComparator {
         return a->nOrderPos < b->nOrderPos;
     }
 };
-
-class WalletTXO
-{
-private:
-    const CWalletTx& m_wtx;
-    const CTxOut& m_output;
-
-public:
-    WalletTXO(const CWalletTx& wtx, const CTxOut& output)
-    : m_wtx(wtx),
-    m_output(output)
-    {
-        Assume(std::ranges::find(wtx.tx->vout, output) != wtx.tx->vout.end());
-    }
-
-    const CWalletTx& GetWalletTx() const { return m_wtx; }
-
-    const CTxOut& GetTxOut() const { return m_output; }
-};
 } // namespace wallet
 
-#endif // BITCOIN_WALLET_TRANSACTION_H
+#endif // QTC_WALLET_TRANSACTION_H

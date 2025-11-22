@@ -1,4 +1,4 @@
-// Copyright (c) 2025 The Bitcoin Core developers
+// Copyright (c) 2025 The QTC Core developers
 // Distributed under the MIT software license, see the accompanying
 // file COPYING or http://www.opensource.org/licenses/mit-license.php.
 
@@ -19,7 +19,7 @@ uint256 ComputeMerkleRootFromPath(const CBlock& block, uint32_t position, const 
         throw std::out_of_range("Position out of range");
     }
 
-    uint256 current_hash = block.vtx[position]->GetHash().ToUint256();
+    uint256 current_hash = block.vtx[position]->GetHash();
 
     for (const uint256& sibling : merkle_path) {
         if (position % 2 == 0) {
@@ -47,7 +47,7 @@ FUZZ_TARGET(merkle)
     tx_hashes.reserve(num_txs);
 
     for (size_t i = 0; i < num_txs; ++i) {
-        tx_hashes.push_back(block->vtx[i]->GetHash().ToUint256());
+        tx_hashes.push_back(block->vtx[i]->GetHash());
     }
 
     // Test ComputeMerkleRoot

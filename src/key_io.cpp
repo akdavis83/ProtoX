@@ -1,4 +1,4 @@
-// Copyright (c) 2014-present The Bitcoin Core developers
+// Copyright (c) 2014-present The QTC Core developers
 // Distributed under the MIT software license, see the accompanying
 // file COPYING or http://www.opensource.org/licenses/mit-license.php.
 
@@ -10,10 +10,178 @@
 #include <script/solver.h>
 #include <tinyformat.h>
 #include <util/strencodings.h>
+#include <crypto/qtc_hash.h> // QTC_Program20_From_PK_SHA3_256
+#include <common/args.h>
+#include <util/fs.h>
+#include <fstream>
+#include <chrono>
 
 #include <algorithm>
 #include <cassert>
 #include <cstring>
+
+// Functions for loading and storing Dilithium3 identity keys
+std::pair<qtc_dilithium::PublicKey, qtc_dilithium::SecretKey> LoadDilithiumIdentityKey() {
+    fs::path dir = gArgs.GetDataDirNet() / "pqnoise";
+    fs::create_directory(dir);
+    fs::path path = dir / "id_dilithium.sk";
+    
+    if (!fs::exists(path)) {
+        // Generate new identity key
+        auto keys = qtc_dilithium::GenerateKeys();
+        StoreDilithiumIdentityKey(keys);
+        return keys;
+    }
+    
+    std::ifstream file(path, std::ios::binary);
+    if (!file.is_open()) {
+        return {};
+    }
+    
+    qtc_dilithium::SecretKey sk;
+    file.read(reinterpret_cast<char*>(sk.data()), sk.size());
+    
+    // Derive public key from secret key
+    qtc_dilithium::PublicKey pk = qtc_dilithium::PublicKeyFromSecretKey(sk);
+    
+    return {pk, sk};
+}
+
+void StoreDilithiumIdentityKey(const std::pair<qtc_dilithium::PublicKey, qtc_dilithium::SecretKey>& keys) {
+    fs::path dir = gArgs.GetDataDirNet() / "pqnoise";
+    fs::create_directory(dir);
+    
+    // Store secret key
+    fs::path sk_path = dir / "id_dilithium.sk";
+    std::ofstream sk_file(sk_path, std::ios::binary);
+    if (sk_file.is_open()) {
+        sk_file.write(reinterpret_cast<const char*>(keys.second.data()), keys.second.size());
+    }
+    
+    // Store public key
+    fs::path pk_path = dir / "id_dilithium.pk";
+    std::ofstream pk_file(pk_path, std::ios::binary);
+    if (pk_file.is_open()) {
+        pk_file.write(reinterpret_cast<const char*>(keys.first.data()), keys.first.size());
+    }
+}
+
+bool ShouldRotateIdentityKey() {
+    fs::path path = gArgs.GetDataDirNet() / "pqnoise" / "id_dilithium.sk";
+    if (!fs::exists(path)) {
+        return true; // No key exists, need to generate
+    }
+    
+    auto mod_time = fs::last_write_time(path);
+    auto now = std::chrono::file_clock::now();
+    // Rotate annually (365 * 24 hours)
+    return (now - mod_time) > std::chrono::hours(365 * 24);
+}
+
+// Functions for loading and storing Kyber1024 KEM keys
+std::pair<qtc_kyber::PublicKey, qtc_kyber::SecretKey> LoadKyberKey() {
+    fs::path dir = gArgs.GetDataDirNet() / "pqnoise";
+    fs::create_directory(dir);
+    fs::path path = dir / "kem.sk";
+    fs::path prev_path = dir / "kem.sk.prev";
+
+    if (fs::exists(path)) {
+        auto mod_time = fs::last_write_time(path);
+        auto now = std::chrono::file_clock::now();
+        if (now - mod_time > std::chrono::hours(24)) {
+            fs::rename(path, prev_path);
+        }
+    }
+
+    if (!fs::exists(path)) {
+        auto keys = qtc_kyber::KeyGen1024();
+        StoreKyberKey(keys);
+        return keys;
+    }
+
+    std::ifstream file(path, std::ios::binary);
+    if (!file.is_open()) {
+        return {};
+    }
+
+    qtc_kyber::SecretKey sk;
+    file.read(reinterpret_cast<char*>(sk.data()), sk.size());
+    qtc_kyber::PublicKey pk = qtc_kyber::PublicKeyFromSecretKey(sk);
+    return {pk, sk};
+}
+
+std::pair<qtc_kyber::PublicKey, qtc_kyber::SecretKey> LoadPrevKyberKey() {
+    fs::path path = gArgs.GetDataDirNet() / "pqnoise" / "kem.sk.prev";
+    if (!fs::exists(path)) {
+        return {};
+    }
+
+    std::ifstream file(path, std::ios::binary);
+    if (!file.is_open()) {
+        return {};
+    }
+
+    qtc_kyber::SecretKey sk;
+    file.read(reinterpret_cast<char*>(sk.data()), sk.size());
+    qtc_kyber::PublicKey pk = qtc_kyber::PublicKeyFromSecretKey(sk);
+    return {pk, sk};
+}
+
+void StoreKyberKey(const std::pair<qtc_kyber::PublicKey, qtc_kyber::SecretKey>& keys) {
+    fs::path path = gArgs.GetDataDirNet() / "pqnoise";
+    fs::create_directory(path);
+    path /= "kem.sk";
+
+    std::ofstream file(path, std::ios::binary);
+    if (!file.is_open()) {
+        return;
+    }
+
+    file.write(reinterpret_cast<const char*>(keys.second.data()), keys.second.size());
+}
+
+// Rekey management functions
+struct PQRekeyPolicy {
+    uint64_t max_bytes = 33554432;  // 32 MB default
+    uint64_t max_minutes = 30;      // 30 minutes default
+    
+    PQRekeyPolicy() {
+        // Load from args
+        max_bytes = gArgs.GetIntArg("-pq-rekey-bytes", max_bytes);
+        max_minutes = gArgs.GetIntArg("-pq-rekey-time", max_minutes);
+    }
+    
+    bool ShouldRekey(uint64_t bytes_sent, std::chrono::minutes time_elapsed) const {
+        return bytes_sent >= max_bytes || time_elapsed.count() >= max_minutes;
+    }
+};
+
+bool ShouldRotateKemKey() {
+    fs::path path = gArgs.GetDataDirNet() / "pqnoise" / "kem.sk";
+    if (!fs::exists(path)) {
+        return true; // No key exists, need to generate
+    }
+    
+    auto mod_time = fs::last_write_time(path);
+    auto now = std::chrono::file_clock::now();
+    // Rotate daily (24 hours)
+    return (now - mod_time) > std::chrono::hours(24);
+}
+
+void ForceKemKeyRotation() {
+    fs::path dir = gArgs.GetDataDirNet() / "pqnoise";
+    fs::path current_path = dir / "kem.sk";
+    fs::path prev_path = dir / "kem.sk.prev";
+    
+    // Move current to previous
+    if (fs::exists(current_path)) {
+        fs::rename(current_path, prev_path);
+    }
+    
+    // Generate new key
+    auto new_keys = qtc_kyber::KeyGen1024();
+    StoreKyberKey(new_keys);
+}
 
 /// Maximum witness length for Bech32 addresses.
 static constexpr std::size_t BECH32_WITNESS_PROG_MAX_LEN = 40;
@@ -43,7 +211,7 @@ public:
 
     std::string operator()(const WitnessV0KeyHash& id) const
     {
-        std::vector<unsigned char> data = {0};
+        std::vector<unsigned char> data = {1}; // QTC PQ addresses use witness v1 (bech32m)
         data.reserve(33);
         ConvertBits<8, 5, true>([&](unsigned char c) { data.push_back(c); }, id.begin(), id.end());
         return bech32::Encode(bech32::Encoding::BECH32, m_params.Bech32HRP(), data);
@@ -51,7 +219,7 @@ public:
 
     std::string operator()(const WitnessV0ScriptHash& id) const
     {
-        std::vector<unsigned char> data = {0};
+        std::vector<unsigned char> data = {1}; // QTC PQ addresses use witness v1 (bech32m)
         data.reserve(53);
         ConvertBits<8, 5, true>([&](unsigned char c) { data.push_back(c); }, id.begin(), id.end());
         return bech32::Encode(bech32::Encoding::BECH32, m_params.Bech32HRP(), data);
@@ -77,6 +245,36 @@ public:
         return bech32::Encode(bech32::Encoding::BECH32M, m_params.Bech32HRP(), data);
     }
 
+    // QTC Quantum-Safe Address Encoding
+// NOTE: Derive the 20-byte program from SHA3-256(pubkey)[0:20] upstream and encode here
+// using bech32m (witness v1).
+    std::string operator()(const QKeyHash& id) const
+    {
+        // QTC uses "qtc" prefix with bech32 for quantum-safe addresses
+        std::vector<unsigned char> data = {1}; // QTC PQ addresses use witness v1 (bech32m)
+        data.reserve(53); // Reserve space for 32-byte hash + overhead
+        ConvertBits<8, 5, true>([&](unsigned char c) { data.push_back(c); }, id.begin(), id.end());
+        return bech32::Encode(bech32::Encoding::BECH32M, "qtc", data);
+    }
+
+    std::string operator()(const QScriptHash& id) const
+    {
+        // QTC quantum script hash with "qtc" prefix
+        std::vector<unsigned char> data = {1}; // Version 1 for quantum script hash
+        data.reserve(53);
+        ConvertBits<8, 5, true>([&](unsigned char c) { data.push_back(c); }, id.begin(), id.end());
+        return bech32::Encode(bech32::Encoding::BECH32M, "qtc", data);
+    }
+
+    std::string operator()(const WitnessV2QKeyHash& id) const
+    {
+        // QTC witness v2 quantum key hash
+        std::vector<unsigned char> data = {2};
+        data.reserve(53);
+        ConvertBits<8, 5, true>([&](unsigned char c) { data.push_back(c); }, id.begin(), id.end());
+        return bech32::Encode(bech32::Encoding::BECH32M, "qtc", data);
+    }
+
     std::string operator()(const CNoDestination& no) const { return {}; }
     std::string operator()(const PubKeyDestination& pk) const { return {}; }
 };
@@ -91,7 +289,7 @@ CTxDestination DecodeDestination(const std::string& str, const CChainParams& par
     bool is_bech32 = (ToLower(str.substr(0, params.Bech32HRP().size())) == params.Bech32HRP());
 
     if (!is_bech32 && DecodeBase58Check(str, data, 21)) {
-        // base58-encoded Bitcoin addresses.
+        // base58-encoded Quantum Coin addresses.
         // Public-key-hash-addresses have version 0 (or 111 testnet).
         // The data vector contains RIPEMD160(SHA256(pubkey)), where pubkey is the serialized public key.
         const std::vector<unsigned char>& pubkey_prefix = params.Base58Prefix(CChainParams::PUBKEY_ADDRESS);
@@ -179,6 +377,28 @@ CTxDestination DecodeDestination(const std::string& str, const CChainParams& par
                 WitnessV1Taproot tap;
                 std::copy(data.begin(), data.end(), tap.begin());
                 return tap;
+            }
+
+            // QTC Quantum-Safe Address Decoding
+            if (dec.hrp == "qtc") {
+                if (version == 1 && data.size() == 20) {
+                    // QTC quantum key hash (qtc1...)
+                    QKeyHash qkeyhash;
+                    std::copy(data.begin(), data.end(), qkeyhash.begin());
+                    return qkeyhash;
+                }
+                if (version == 1 && data.size() == 32) {
+                    // QTC quantum script hash
+                    QScriptHash qscripthash;
+                    std::copy(data.begin(), data.end(), qscripthash.begin());
+                    return qscripthash;
+                }
+                if (version == 2 && data.size() == 32) {
+                    // QTC witness v2 quantum key hash
+                    WitnessV2QKeyHash wqkeyhash;
+                    std::copy(data.begin(), data.end(), wqkeyhash.begin());
+                    return wqkeyhash;
+                }
             }
 
             if (CScript::IsPayToAnchor(version, data)) {

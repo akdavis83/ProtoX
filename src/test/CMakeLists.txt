@@ -1,10 +1,10 @@
-# Copyright (c) 2023-present The Bitcoin Core developers
+# Copyright (c) 2023-present The Quantum Coin Core developers
 # Distributed under the MIT software license, see the accompanying
 # file COPYING or https://opensource.org/license/mit/.
 
 # Do not use generator expressions in test sources because the
 # SOURCES property is processed to gather test suite macros.
-add_executable(test_bitcoin
+add_executable(test_qtc
   main.cpp
   addrman_tests.cpp
   allocator_tests.cpp
@@ -18,6 +18,7 @@ add_executable(test_bitcoin
   bech32_tests.cpp
   bip32_tests.cpp
   bip324_tests.cpp
+  blake3_tests.cpp
   blockchain_tests.cpp
   blockencodings_tests.cpp
   blockfilter_index_tests.cpp
@@ -25,8 +26,6 @@ add_executable(test_bitcoin
   blockmanager_tests.cpp
   bloom_tests.cpp
   bswap_tests.cpp
-  caches_tests.cpp
-  chain_tests.cpp
   chainstate_write_tests.cpp
   checkqueue_tests.cpp
   cluster_linearize_tests.cpp
@@ -34,15 +33,18 @@ add_executable(test_bitcoin
   coinscachepair_tests.cpp
   coinstatsindex_tests.cpp
   common_url_tests.cpp
+  compilerbug_tests.cpp
   compress_tests.cpp
   crypto_tests.cpp
+  qtc_pq_witness_tests.cpp
+  pqnoise_handshake_tests.cpp
+  aead_fuzz_tests.cpp
   cuckoocache_tests.cpp
   dbwrapper_tests.cpp
   denialofservice_tests.cpp
   descriptor_tests.cpp
   disconnected_transactions.cpp
   feefrac_tests.cpp
-  feerounder_tests.cpp
   flatfile_tests.cpp
   fs_tests.cpp
   getarg_tests.cpp
@@ -66,12 +68,12 @@ add_executable(test_bitcoin
   net_peer_eviction_tests.cpp
   net_tests.cpp
   netbase_tests.cpp
-  node_init_tests.cpp
   node_warnings_tests.cpp
   orphanage_tests.cpp
   pcp_tests.cpp
   peerman_tests.cpp
   pmt_tests.cpp
+  policy_fee_tests.cpp
   policyestimator_tests.cpp
   pool_tests.cpp
   pow_tests.cpp
@@ -85,7 +87,6 @@ add_executable(test_bitcoin
   rpc_tests.cpp
   sanity_tests.cpp
   scheduler_tests.cpp
-  script_assets_tests.cpp
   script_p2sh_tests.cpp
   script_parse_tests.cpp
   script_segwit_tests.cpp
@@ -102,7 +103,6 @@ add_executable(test_bitcoin
   span_tests.cpp
   streams_tests.cpp
   sync_tests.cpp
-  system_ram_tests.cpp
   system_tests.cpp
   testnet4_miner_tests.cpp
   timeoffsets_tests.cpp
@@ -110,7 +110,6 @@ add_executable(test_bitcoin
   transaction_tests.cpp
   translation_tests.cpp
   txdownload_tests.cpp
-  txgraph_tests.cpp
   txindex_tests.cpp
   txpackage_tests.cpp
   txreconciliation_tests.cpp
@@ -118,7 +117,6 @@ add_executable(test_bitcoin
   txvalidation_tests.cpp
   txvalidationcache_tests.cpp
   uint256_tests.cpp
-  util_check_tests.cpp
   util_string_tests.cpp
   util_tests.cpp
   util_threadnames_tests.cpp
@@ -133,7 +131,7 @@ add_executable(test_bitcoin
 )
 
 include(TargetDataSources)
-target_json_data_sources(test_bitcoin
+target_json_data_sources(test_qtc
   data/base58_encode_decode.json
   data/bip341_wallet_vectors.json
   data/blockfilters.json
@@ -144,18 +142,18 @@ target_json_data_sources(test_bitcoin
   data/tx_invalid.json
   data/tx_valid.json
 )
-target_raw_data_sources(test_bitcoin NAMESPACE test::data
+target_raw_data_sources(test_qtc NAMESPACE test::data
   data/asmap.raw
 )
 
-add_windows_application_manifest(test_bitcoin)
+add_windows_application_manifest(test_qtc)
 
-target_link_libraries(test_bitcoin
+target_link_libraries(test_qtc
   core_interface
   test_util
-  bitcoin_cli
-  bitcoin_node
-  bitcoin_consensus
+  qtc_cli
+  qtc_node
+  qtc_consensus
   minisketch
   secp256k1
   Boost::headers
@@ -167,20 +165,18 @@ if(ENABLE_WALLET)
 endif()
 
 if(ENABLE_IPC)
-  target_link_libraries(bitcoin_ipc_test
+  target_link_libraries(qtc_ipc_test
     PRIVATE
       core_interface
       univalue
       Boost::headers
   )
 
-  target_sources(test_bitcoin
+  target_sources(test_qtc
     PRIVATE
       ipc_tests.cpp
   )
-  target_link_libraries(test_bitcoin bitcoin_ipc_test bitcoin_ipc)
-
-  configure_file(.clang-tidy.in .clang-tidy USE_SOURCE_PERMISSIONS COPYONLY)
+  target_link_libraries(test_qtc qtc_ipc_test qtc_ipc)
 endif()
 
 function(add_boost_test source_file)
@@ -190,28 +186,26 @@ function(add_boost_test source_file)
 
   file(READ "${source_file}" source_file_content)
   string(REGEX
-    MATCHALL "(BOOST_FIXTURE_TEST_SUITE|BOOST_AUTO_TEST_SUITE)\\(([A-Za-z0-9_]+)"
+    MATCH "(BOOST_FIXTURE_TEST_SUITE|BOOST_AUTO_TEST_SUITE)\\(([A-Za-z0-9_]+)"
     test_suite_macro "${source_file_content}"
   )
-  list(TRANSFORM test_suite_macro
+  string(REGEX
     REPLACE "(BOOST_FIXTURE_TEST_SUITE|BOOST_AUTO_TEST_SUITE)\\(" ""
+    test_suite_name "${test_suite_macro}"
   )
-  foreach(test_suite_name IN LISTS test_suite_macro)
+  if(test_suite_name)
     add_test(NAME ${test_suite_name}
-      COMMAND test_bitcoin --run_test=${test_suite_name} --catch_system_error=no --log_level=test_suite -- DEBUG_LOG_OUT
+      COMMAND test_qtc --run_test=${test_suite_name} --catch_system_error=no --log_level=test_suite -- DEBUG_LOG_OUT
     )
     set_property(TEST ${test_suite_name} PROPERTY
-      SKIP_REGULAR_EXPRESSION
-        "no test cases matching filter"
-        "skipping script_assets_test"
-        "skipping total_ram"
+      SKIP_REGULAR_EXPRESSION "no test cases matching filter"
     )
-  endforeach()
+  endif()
 endfunction()
 
 function(add_all_test_targets)
-  get_target_property(test_source_dir test_bitcoin SOURCE_DIR)
-  get_target_property(test_sources test_bitcoin SOURCES)
+  get_target_property(test_source_dir test_qtc SOURCE_DIR)
+  get_target_property(test_sources test_qtc SOURCES)
   foreach(test_source ${test_sources})
     cmake_path(IS_RELATIVE test_source result)
     if(result)
@@ -223,4 +217,6 @@ endfunction()
 
 add_all_test_targets()
 
-install_binary_component(test_bitcoin INTERNAL)
+install_binary_component(test_qtc)
+
+  kyber_dilithium_tests.cpp

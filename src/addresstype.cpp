@@ -1,4 +1,4 @@
-// Copyright (c) 2023 The Bitcoin Core developers
+// Copyright (c) 2023 The QTC Core developers
 // Distributed under the MIT software license, see the accompanying
 // file COPYING or https://www.opensource.org/licenses/mit-license.php.
 
@@ -46,6 +46,18 @@ WitnessV0ScriptHash::WitnessV0ScriptHash(const CScript& in)
     CSHA256().Write(in.data(), in.size()).Finalize(begin());
 }
 
+// QTC Quantum-Safe Address Implementations
+QKeyHash::QKeyHash(const QCompressedPubKey& pubkey) : BaseHash(pubkey.GetHash()) {}
+
+QScriptHash::QScriptHash(const CScript& script) {
+    // Use SHA3-256 for quantum-safe script hashing
+    uint256 hash = QHash(std::span{script});
+    std::copy(hash.begin(), hash.end(), begin());
+}
+
+WitnessV2QKeyHash::WitnessV2QKeyHash(const QCompressedPubKey& pubkey) : BaseHash(pubkey.GetHash()) {}
+WitnessV2QKeyHash::WitnessV2QKeyHash(const QKeyHash& key_hash) : BaseHash(uint256{key_hash}) {}
+
 bool ExtractDestination(const CScript& scriptPubKey, CTxDestination& addressRet)
 {
     std::vector<valtype> vSolutions;
@@ -89,6 +101,24 @@ bool ExtractDestination(const CScript& scriptPubKey, CTxDestination& addressRet)
     }
     case TxoutType::ANCHOR: {
         addressRet = PayToAnchor();
+        return true;
+    }
+    case TxoutType::QUANTUM_KEYHASH: {
+        QKeyHash hash;
+        std::copy(vSolutions[0].begin(), vSolutions[0].end(), hash.begin());
+        addressRet = hash;
+        return true;
+    }
+    case TxoutType::QUANTUM_SCRIPTHASH: {
+        QScriptHash hash;
+        std::copy(vSolutions[0].begin(), vSolutions[0].end(), hash.begin());
+        addressRet = hash;
+        return true;
+    }
+    case TxoutType::WITNESS_V2_QKEYHASH: {
+        WitnessV2QKeyHash hash;
+        std::copy(vSolutions[0].begin(), vSolutions[0].end(), hash.begin());
+        addressRet = hash;
         return true;
     }
     case TxoutType::WITNESS_UNKNOWN: {
@@ -147,6 +177,22 @@ public:
     {
         return CScript() << CScript::EncodeOP_N(id.GetWitnessVersion()) << id.GetWitnessProgram();
     }
+
+    // QTC Quantum-Safe Script Generation
+    CScript operator()(const QKeyHash& keyID) const
+    {
+        return CScript() << OP_DUP << OP_QHASH << ToByteVector(keyID) << OP_EQUALVERIFY << OP_QCHECKSIG;
+    }
+
+    CScript operator()(const QScriptHash& scriptID) const
+    {
+        return CScript() << OP_QHASH << ToByteVector(scriptID) << OP_EQUAL;
+    }
+
+    CScript operator()(const WitnessV2QKeyHash& id) const
+    {
+        return CScript() << OP_2 << ToByteVector(id);
+    }
 };
 
 class ValidDestinationVisitor
@@ -160,6 +206,10 @@ public:
     bool operator()(const WitnessV0ScriptHash& dest) const { return true; }
     bool operator()(const WitnessV1Taproot& dest) const { return true; }
     bool operator()(const WitnessUnknown& dest) const { return true; }
+    // QTC Quantum-Safe Address Validation
+    bool operator()(const QKeyHash& dest) const { return true; }
+    bool operator()(const QScriptHash& dest) const { return true; }
+    bool operator()(const WitnessV2QKeyHash& dest) const { return true; }
 };
 } // namespace
 

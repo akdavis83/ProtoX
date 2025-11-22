@@ -1,9 +1,9 @@
-// Copyright (c) 2020-present The Bitcoin Core developers
+// Copyright (c) 2020-present The QTC Core developers
 // Distributed under the MIT software license, see the accompanying
 // file COPYING or http://www.opensource.org/licenses/mit-license.php.
 
-#ifndef BITCOIN_WALLET_SQLITE_H
-#define BITCOIN_WALLET_SQLITE_H
+#ifndef QTC_WALLET_SQLITE_H
+#define QTC_WALLET_SQLITE_H
 
 #include <sync.h>
 #include <wallet/db.h>
@@ -104,7 +104,7 @@ class SQLiteDatabase : public WalletDatabase
 private:
     const bool m_mock{false};
 
-    const fs::path m_dir_path;
+    const std::string m_dir_path;
 
     const std::string m_file_path;
 
@@ -140,21 +140,13 @@ public:
     void Close() override;
 
     /** Rewrite the entire database on disk */
-    bool Rewrite() override;
+    bool Rewrite(const char* skip = nullptr) override;
 
     /** Back up the entire database to a file.
      */
     bool Backup(const std::string& dest) const override;
 
     std::string Filename() override { return m_file_path; }
-    /** Return paths to all database created files */
-    std::vector<fs::path> Files() override
-    {
-        std::vector<fs::path> files;
-        files.emplace_back(m_dir_path / fs::PathFromString(m_file_path));
-        files.emplace_back(m_dir_path / fs::PathFromString(m_file_path + "-journal"));
-        return files;
-    }
     std::string Format() override { return "sqlite"; }
 
     /** Make a SQLiteBatch connected to this database */
@@ -172,4 +164,4 @@ std::unique_ptr<SQLiteDatabase> MakeSQLiteDatabase(const fs::path& path, const D
 std::string SQLiteDatabaseVersion();
 } // namespace wallet
 
-#endif // BITCOIN_WALLET_SQLITE_H
+#endif // QTC_WALLET_SQLITE_H

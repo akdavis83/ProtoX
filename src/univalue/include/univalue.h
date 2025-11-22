@@ -1,10 +1,10 @@
 // Copyright 2014 BitPay Inc.
-// Copyright 2015 Bitcoin Core Developers
+// Copyright 2015 QTC Core Developers
 // Distributed under the MIT software license, see the accompanying
 // file COPYING or https://opensource.org/licenses/mit-license.php.
 
-#ifndef BITCOIN_UNIVALUE_INCLUDE_UNIVALUE_H
-#define BITCOIN_UNIVALUE_INCLUDE_UNIVALUE_H
+#ifndef QTC_UNIVALUE_INCLUDE_UNIVALUE_H
+#define QTC_UNIVALUE_INCLUDE_UNIVALUE_H
 
 #include <charconv>
 #include <cstddef>
@@ -69,8 +69,6 @@ public:
     bool empty() const { return (values.size() == 0); }
 
     size_t size() const { return values.size(); }
-
-    void reserve(size_t new_cap);
 
     void getObjMap(std::map<std::string,UniValue>& kv) const;
     bool checkObject(const std::map<std::string,UniValue::VType>& memberTypes) const;
@@ -204,4 +202,4 @@ static inline bool json_isspace(int ch)
 
 extern const UniValue NullUniValue;
 
-#endif // BITCOIN_UNIVALUE_INCLUDE_UNIVALUE_H
+#endif // QTC_UNIVALUE_INCLUDE_UNIVALUE_H

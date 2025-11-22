@@ -1,5 +1,9 @@
 #!/usr/bin/env python3
+<<<<<<< Updated upstream:test/functional/tool_rpcauth.py
 # Copyright (c) 2015-present The Bitcoin Core developers
+=======
+# Copyright (c) 2015-2018 The Quantum Coin Core developers
+>>>>>>> Stashed changes:test/util/rpcauth-test.py
 # Distributed under the MIT software license, see the accompanying
 # file COPYING or http://www.opensource.org/licenses/mit-license.php.
 """Test share/rpcauth/rpcauth.py

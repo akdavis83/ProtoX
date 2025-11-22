@@ -1,14 +1,14 @@
-// Copyright (c) 2011-2021 The Bitcoin Core developers
+// Copyright (c) 2011-2021 The QTC Core developers
 // Distributed under the MIT software license, see the accompanying
 // file COPYING or http://www.opensource.org/licenses/mit-license.php.
 
-#ifndef BITCOIN_QT_TRANSACTIONVIEW_H
-#define BITCOIN_QT_TRANSACTIONVIEW_H
+#ifndef QTC_QT_TRANSACTIONVIEW_H
+#define QTC_QT_TRANSACTIONVIEW_H
 
 #include <qt/guiutil.h>
 
-#include <primitives/transaction_identifier.h>
 #include <uint256.h>
+#include <util/transaction_identifier.h>
 
 #include <QWidget>
 #include <QKeyEvent>
@@ -126,4 +126,4 @@ public Q_SLOTS:
     void focusTransaction(const Txid& txid);
 };
 
-#endif // BITCOIN_QT_TRANSACTIONVIEW_H
+#endif // QTC_QT_TRANSACTIONVIEW_H

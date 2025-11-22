@@ -1,6 +1,4 @@
 .NOTPARALLEL :
-# Disable builtin variables, rules and suffixes.
-MAKEFLAGS += --no-builtin-rules --no-builtin-variables
 
 # Pattern rule to print variables, e.g. make print-top_srcdir
 print-%: FORCE
@@ -41,10 +39,9 @@ NO_QR ?=
 NO_WALLET ?=
 NO_ZMQ ?=
 NO_USDT ?=
-# Default NO_IPC value is 1 on Windows
-NO_IPC ?= $(if $(findstring mingw32,$(HOST)),1,)
+MULTIPROCESS ?=
 LTO ?=
-FALLBACK_DOWNLOAD_PATH ?= https://bitcoincore.org/depends-sources
+FALLBACK_DOWNLOAD_PATH ?= https://qtccore.org/depends-sources
 
 C_STANDARD ?= c11
 CXX_STANDARD ?= c++20
@@ -164,7 +161,7 @@ qt_native_packages_$(NO_QT) = $(qt_native_packages)
 wallet_packages_$(NO_WALLET) = $(sqlite_packages)
 
 zmq_packages_$(NO_ZMQ) = $(zmq_packages)
-ipc_packages_$(NO_IPC) = $(ipc_packages)
+multiprocess_packages_$(MULTIPROCESS) = $(multiprocess_packages)
 usdt_packages_$(NO_USDT) = $(usdt_$(host_os)_packages)
 
 packages += $($(host_arch)_$(host_os)_packages) $($(host_os)_packages) $(boost_packages_) $(libevent_packages_) $(qt_packages_) $(wallet_packages_) $(usdt_packages_)
@@ -174,8 +171,8 @@ ifneq ($(zmq_packages_),)
 packages += $(zmq_packages)
 endif
 
-ifneq ($(ipc_packages_),)
-packages += $(ipc_packages)
+ifeq ($(multiprocess_packages_),)
+packages += $(multiprocess_packages)
 native_packages += $(multiprocess_native_packages)
 endif
 
@@ -193,7 +190,7 @@ $(host_prefix)/.stamp_$(final_build_id): $(native_packages) $(packages)
 	echo copying packages: $^
 	echo to: $(@D)
 	cd $(@D); $(foreach package,$^, $(build_TAR) xf $($(package)_cached); )
-	echo To build Bitcoin Core with these packages, pass \'--toolchain $(@D)/toolchain.cmake\' to the first CMake invocation.
+	echo To build Quantum Coin Core with these packages, pass \'--toolchain $(@D)/toolchain.cmake\' to the first CMake invocation.
 	touch $@
 
 ifeq ($(host),$(build))
@@ -234,7 +231,7 @@ $(host_prefix)/toolchain.cmake : toolchain.cmake.in $(host_prefix)/.stamp_$(fina
             -e 's|@zmq_packages@|$(zmq_packages_)|' \
             -e 's|@wallet_packages@|$(wallet_packages_)|' \
             -e 's|@usdt_packages@|$(usdt_packages_)|' \
-            -e 's|@ipc_packages@|$(ipc_packages_)|' \
+            -e 's|@multiprocess@|$(MULTIPROCESS)|' \
             $< > $@
 	touch $@
 

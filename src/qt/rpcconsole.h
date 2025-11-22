@@ -1,11 +1,11 @@
-// Copyright (c) 2011-2022 The Bitcoin Core developers
+// Copyright (c) 2011-2022 The QTC Core developers
 // Distributed under the MIT software license, see the accompanying
 // file COPYING or http://www.opensource.org/licenses/mit-license.php.
 
-#ifndef BITCOIN_QT_RPCCONSOLE_H
-#define BITCOIN_QT_RPCCONSOLE_H
+#ifndef QTC_QT_RPCCONSOLE_H
+#define QTC_QT_RPCCONSOLE_H
 
-#include <bitcoin-build-config.h> // IWYU pragma: keep
+#include <qtc-build-config.h> // IWYU pragma: keep
 
 #include <qt/clientmodel.h>
 #include <qt/guiutil.h>
@@ -15,14 +15,12 @@
 
 #include <QByteArray>
 #include <QCompleter>
-#include <QMimeData>
-#include <QTextDocumentFragment>
-#include <QTextEdit>
 #include <QThread>
 #include <QWidget>
 
 class PlatformStyle;
 class RPCExecutor;
+class RPCTimerInterface;
 class WalletModel;
 
 namespace interfaces {
@@ -39,7 +37,7 @@ class QMenu;
 class QItemSelection;
 QT_END_NAMESPACE
 
-/** Local Bitcoin RPC console. */
+/** Local Quantum Coin RPC console. */
 class RPCConsole: public QWidget
 {
     Q_OBJECT
@@ -168,6 +166,7 @@ private:
     QString cmdBeforeBrowsing;
     QList<NodeId> cachedNodeids;
     const PlatformStyle* const platformStyle;
+    RPCTimerInterface *rpcTimerInterface = nullptr;
     QMenu *peersTableContextMenu = nullptr;
     QMenu *banTableContextMenu = nullptr;
     int consoleFontSize = 0;
@@ -194,20 +193,4 @@ private Q_SLOTS:
     void updateAlerts(const QString& warnings);
 };
 
-/**
- * A version of QTextEdit that only populates plaintext mime data from a
- * selection, this avoids some bad behavior in QT's HTML->Markdown conversion.
- */
-class PlainCopyTextEdit : public QTextEdit {
-    Q_OBJECT
-public:
-    using QTextEdit::QTextEdit;
-protected:
-    QMimeData* createMimeDataFromSelection() const override {
-        auto md = new QMimeData();
-        md->setText(textCursor().selection().toPlainText());
-        return md;
-    }
-};
-
-#endif // BITCOIN_QT_RPCCONSOLE_H
+#endif // QTC_QT_RPCCONSOLE_H

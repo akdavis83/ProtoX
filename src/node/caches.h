@@ -1,9 +1,9 @@
-// Copyright (c) 2021 The Bitcoin Core developers
+// Copyright (c) 2021 The QTC Core developers
 // Distributed under the MIT software license, see the accompanying
 // file COPYING or http://www.opensource.org/licenses/mit-license.php.
 
-#ifndef BITCOIN_NODE_CACHES_H
-#define BITCOIN_NODE_CACHES_H
+#ifndef QTC_NODE_CACHES_H
+#define QTC_NODE_CACHES_H
 
 #include <kernel/caches.h>
 #include <util/byte_units.h>
@@ -27,13 +27,6 @@ struct CacheSizes {
     kernel::CacheSizes kernel;
 };
 CacheSizes CalculateCacheSizes(const ArgsManager& args, size_t n_indexes = 0);
-constexpr bool ShouldWarnOversizedDbCache(size_t dbcache, size_t total_ram) noexcept
-{
-    const size_t cap{(total_ram < 2048_MiB) ? DEFAULT_DB_CACHE : (total_ram / 100) * 75};
-    return dbcache > cap;
-}
-
-void LogOversizedDbCache(const ArgsManager& args) noexcept;
 } // namespace node
 
-#endif // BITCOIN_NODE_CACHES_H
+#endif // QTC_NODE_CACHES_H

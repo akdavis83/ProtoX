@@ -1,12 +1,12 @@
 #!/usr/bin/env python3
-# Copyright (c) 2021 The Bitcoin Core developers
+# Copyright (c) 2021 The Quantum Coin Core developers
 # Distributed under the MIT software license, see the accompanying
 # file COPYING or http://www.opensource.org/licenses/mit-license.php.
 
-""" Interactive bitcoind P2P network traffic monitor utilizing USDT and the
+""" Interactive qtcd P2P network traffic monitor utilizing USDT and the
     net:inbound_message and net:outbound_message tracepoints. """
 
-# This script demonstrates what USDT for Bitcoin Core can enable. It uses BCC
+# This script demonstrates what USDT for Quantum Coin Core can enable. It uses BCC
 # (https://github.com/iovisor/bcc) to load a sandboxed eBPF program into the
 # Linux kernel (root privileges are required). The eBPF program attaches to two
 # statically defined tracepoints. The tracepoint 'net:inbound_message' is called
@@ -126,15 +126,15 @@ class Peer:
 
 def main(pid):
     peers = dict()
-    print(f"Hooking into bitcoind with pid {pid}")
-    bitcoind_with_usdts = USDT(pid=int(pid))
+    print(f"Hooking into qtcd with pid {pid}")
+    qtcd_with_usdts = USDT(pid=int(pid))
 
     # attaching the trace functions defined in the BPF program to the tracepoints
-    bitcoind_with_usdts.enable_probe(
+    qtcd_with_usdts.enable_probe(
         probe="inbound_message", fn_name="trace_inbound_message")
-    bitcoind_with_usdts.enable_probe(
+    qtcd_with_usdts.enable_probe(
         probe="outbound_message", fn_name="trace_outbound_message")
-    bpf = BPF(text=program, usdt_contexts=[bitcoind_with_usdts])
+    bpf = BPF(text=program, usdt_contexts=[qtcd_with_usdts])
 
     # BCC: perf buffer handle function for inbound_messages
     def handle_inbound(_, data, size):
@@ -179,7 +179,7 @@ def loop(screen, bpf, peers):
     info_panel = panel.new_panel(win)
     info_panel.hide()
 
-    ROWS_AVAILABLE_FOR_LIST = curses.LINES - 5
+    ROWS_AVALIABLE_FOR_LIST = curses.LINES - 5
     scroll = 0
 
     while True:
@@ -191,7 +191,7 @@ def loop(screen, bpf, peers):
             if (ch == curses.KEY_DOWN or ch == ord("j")) and cur_list_pos < len(
                     peers.keys()) -1 and info_panel.hidden():
                 cur_list_pos += 1
-                if cur_list_pos >= ROWS_AVAILABLE_FOR_LIST:
+                if cur_list_pos >= ROWS_AVALIABLE_FOR_LIST:
                     scroll += 1
             if (ch == curses.KEY_UP or ch == ord("k")) and cur_list_pos > 0 and info_panel.hidden():
                 cur_list_pos -= 1
@@ -203,14 +203,14 @@ def loop(screen, bpf, peers):
                 else:
                     info_panel.hide()
             screen.erase()
-            render(screen, peers, cur_list_pos, scroll, ROWS_AVAILABLE_FOR_LIST, info_panel)
+            render(screen, peers, cur_list_pos, scroll, ROWS_AVALIABLE_FOR_LIST, info_panel)
             curses.panel.update_panels()
             screen.refresh()
         except KeyboardInterrupt:
             exit()
 
 
-def render(screen, peers, cur_list_pos, scroll, ROWS_AVAILABLE_FOR_LIST, info_panel):
+def render(screen, peers, cur_list_pos, scroll, ROWS_AVALIABLE_FOR_LIST, info_panel):
     """ renders the list of peers and details panel
 
     This code is unrelated to USDT, BCC and BPF.
@@ -223,7 +223,7 @@ def render(screen, peers, cur_list_pos, scroll, ROWS_AVAILABLE_FOR_LIST, info_pa
         1, 0, (" Navigate with UP/DOWN or J/K and select a peer with ENTER or SPACE to see individual P2P messages"), curses.A_NORMAL)
     screen.addstr(3, 0,
                   header_format % ("PEER", "OUTBOUND", "INBOUND", "TYPE", "ADDR"), curses.A_BOLD | curses.A_UNDERLINE)
-    peer_list = sorted(peers.keys())[scroll:ROWS_AVAILABLE_FOR_LIST+scroll]
+    peer_list = sorted(peers.keys())[scroll:ROWS_AVALIABLE_FOR_LIST+scroll]
     for i, peer_id in enumerate(peer_list):
         peer = peers[peer_id]
         screen.addstr(i + 4, 0,
@@ -259,7 +259,7 @@ def running_as_root():
 
 if __name__ == "__main__":
     if len(sys.argv) != 2:
-        print("USAGE:", sys.argv[0], "<pid of bitcoind>")
+        print("USAGE:", sys.argv[0], "<pid of qtcd>")
         exit()
     if not running_as_root():
         print("You might not have the privileges required to hook into the tracepoints!")

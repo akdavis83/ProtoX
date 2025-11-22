@@ -1,9 +1,9 @@
-// Copyright (c) 2009-present The Bitcoin Core developers
+// Copyright (c) 2009-present The QTC Core developers
 // Distributed under the MIT software license, see the accompanying
 // file COPYING or http://www.opensource.org/licenses/mit-license.php.
 
-#ifndef BITCOIN_NETBASE_H
-#define BITCOIN_NETBASE_H
+#ifndef QTC_NETBASE_H
+#define QTC_NETBASE_H
 
 #include <compat/compat.h>
 #include <netaddress.h>
@@ -121,13 +121,6 @@ public:
         m_reachable.clear();
     }
 
-    void Reset() EXCLUSIVE_LOCKS_REQUIRED(!m_mutex)
-    {
-        AssertLockNotHeld(m_mutex);
-        LOCK(m_mutex);
-        m_reachable = DefaultNets();
-    }
-
     [[nodiscard]] bool Contains(Network net) const EXCLUSIVE_LOCKS_REQUIRED(!m_mutex)
     {
         AssertLockNotHeld(m_mutex);
@@ -149,21 +142,17 @@ public:
     }
 
 private:
-    static std::unordered_set<Network> DefaultNets()
-    {
-        return {
-            NET_UNROUTABLE,
-            NET_IPV4,
-            NET_IPV6,
-            NET_ONION,
-            NET_I2P,
-            NET_CJDNS,
-            NET_INTERNAL
-        };
-    };
-
     mutable Mutex m_mutex;
-    std::unordered_set<Network> m_reachable GUARDED_BY(m_mutex){DefaultNets()};
+
+    std::unordered_set<Network> m_reachable GUARDED_BY(m_mutex){
+        NET_UNROUTABLE,
+        NET_IPV4,
+        NET_IPV6,
+        NET_ONION,
+        NET_I2P,
+        NET_CJDNS,
+        NET_INTERNAL
+    };
 };
 
 extern ReachableNets g_reachable_nets;
@@ -362,4 +351,4 @@ bool IsBadPort(uint16_t port);
  */
 CService MaybeFlipIPv6toCJDNS(const CService& service);
 
-#endif // BITCOIN_NETBASE_H
+#endif // QTC_NETBASE_H

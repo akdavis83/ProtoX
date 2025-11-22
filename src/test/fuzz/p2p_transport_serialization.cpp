@@ -1,4 +1,4 @@
-// Copyright (c) 2019-present The Bitcoin Core developers
+// Copyright (c) 2019-present The QTC Core developers
 // Distributed under the MIT software license, see the accompanying
 // file COPYING or http://www.opensource.org/licenses/mit-license.php.
 
@@ -63,7 +63,7 @@ FUZZ_TARGET(p2p_transport_serialization, .init = initialize_p2p_transport_serial
 
     if (checksum_assist && mutable_msg_bytes.size() == CMessageHeader::CHECKSUM_OFFSET) {
         CHash256 hasher;
-        unsigned char hsh[32];
+        unsigned char hsh[64];
         hasher.Write(payload_bytes);
         hasher.Finalize(hsh);
         for (size_t i = 0; i < CMessageHeader::CHECKSUM_SIZE; ++i) {

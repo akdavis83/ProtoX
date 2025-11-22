@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-# Copyright (c) 2017-2021 The Bitcoin Core developers
+# Copyright (c) 2017-2021 The Quantum Coin Core developers
 # Distributed under the MIT software license, see the accompanying
 # file COPYING or http://www.opensource.org/licenses/mit-license.php.
 """Test various fingerprinting protections.
@@ -20,13 +20,13 @@ from test_framework.p2p import (
     msg_getheaders,
     p2p_lock,
 )
-from test_framework.test_framework import BitcoinTestFramework
+from test_framework.test_framework import Quantum CoinTestFramework
 from test_framework.util import (
     assert_equal,
 )
 
 
-class P2PFingerprintTest(BitcoinTestFramework):
+class P2PFingerprintTest(Quantum CoinTestFramework):
     def set_test_params(self):
         self.setup_clean_chain = True
         self.num_nodes = 1
@@ -41,7 +41,7 @@ class P2PFingerprintTest(BitcoinTestFramework):
             block.solve()
 
             blocks.append(block)
-            prev_hash = block.hash_hex
+            prev_hash = block.hash
             prev_height += 1
             prev_median_time = block_time
         return blocks
@@ -79,7 +79,7 @@ class P2PFingerprintTest(BitcoinTestFramework):
 
         # Force reorg to a longer chain
         node0.send_without_ping(msg_headers(new_blocks))
-        node0.wait_for_getdata([x.hash_int for x in new_blocks])
+        node0.wait_for_getdata([x.sha256 for x in new_blocks])
         for block in new_blocks:
             node0.send_and_ping(msg_block(block))
 

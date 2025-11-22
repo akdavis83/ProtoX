@@ -1,0 +1,37 @@
+#ifndef QTC_CRYPTO_QTC_QUANTUM_POW_H
+#define QTC_CRYPTO_QTC_QUANTUM_POW_H
+
+#include <array>
+#include <cstdint>
+#include "primitives/block.h" // For QTCBlockHeader
+
+// Define Argon2 parameters
+#define QTC_POW_TIME_COST 2
+#define QTC_POW_MEMORY_SIZE (64 * 1024) // 64 MB
+#define QTC_POW_PARALLELISM 1
+
+namespace qtc_quantum_pow {
+
+    // QTC Alternative Quantum-Safe Algorithm (Argon2-based)
+    // NOTE: This is NOT the production mining algorithm!
+    // Production uses qtc_quantum_randomx.h (RandomX-based for 8000+ H/s)
+    std::array<uint8_t, 32> qtc_quantum_pow_hash(const QTCBlockHeader& header);
+
+    // Verify quantum-safe proof of work
+    bool qtc_quantum_pow_verify(const QTCBlockHeader& header, const std::array<uint8_t, 32>& target);
+
+    // Phase 1: Kyber1024 Quantum-Safe Challenge
+    std::array<uint8_t, 32> phase1_kyber_challenge(const QTCBlockHeader& header);
+
+    // Phase 2: Argon2 Memory-Hard ASIC-Resistant Function
+    std::array<uint8_t, 32> phase2_argon2_memory_hard(const std::array<uint8_t, 32>& kyber_output, const std::vector<unsigned char>& salt);
+
+    // Phase 3: BLAKE3 Fast Finalization
+    std::array<uint8_t, 32> phase3_blake3_finalize(const std::array<uint8_t, 32>& argon2_output);
+
+    // Mining difficulty adjustment for quantum-safe algorithm
+    uint32_t calculate_next_difficulty(uint32_t current_bits, uint64_t actual_timespan, uint64_t target_timespan);
+
+} // namespace qtc_quantum_pow
+
+#endif // QTC_CRYPTO_QTC_QUANTUM_POW_H

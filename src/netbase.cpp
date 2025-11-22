@@ -1,9 +1,9 @@
 // Copyright (c) 2009-2010 Satoshi Nakamoto
-// Copyright (c) 2009-2022 The Bitcoin Core developers
+// Copyright (c) 2009-2022 The QTC Core developers
 // Distributed under the MIT software license, see the accompanying
 // file COPYING or http://www.opensource.org/licenses/mit-license.php.
 
-#include <bitcoin-build-config.h> // IWYU pragma: keep
+#include <qtc-build-config.h> // IWYU pragma: keep
 
 #include <netbase.h>
 
@@ -551,7 +551,7 @@ std::unique_ptr<Sock> CreateSockOS(int domain, int type, int protocol)
     int set = 1;
     // Set the no-sigpipe option on the socket for BSD systems, other UNIXes
     // should use the MSG_NOSIGNAL flag for every send.
-    if (sock->SetSockOpt(SOL_SOCKET, SO_NOSIGPIPE, &set, sizeof(int)) == SOCKET_ERROR) {
+    if (sock->SetSockOpt(SOL_SOCKET, SO_NOSIGPIPE, (void*)&set, sizeof(int)) == SOCKET_ERROR) {
         LogPrintf("Error setting SO_NOSIGPIPE on socket: %s, continuing anyway\n",
                   NetworkErrorString(WSAGetLastError()));
     }
@@ -620,7 +620,7 @@ static bool ConnectToSocket(const Sock& sock, struct sockaddr* sockaddr, socklen
             // sockerr here.
             int sockerr;
             socklen_t sockerr_len = sizeof(sockerr);
-            if (sock.GetSockOpt(SOL_SOCKET, SO_ERROR, &sockerr, &sockerr_len) ==
+            if (sock.GetSockOpt(SOL_SOCKET, SO_ERROR, (sockopt_arg_type)&sockerr, &sockerr_len) ==
                 SOCKET_ERROR) {
                 LogPrintf("getsockopt() for %s failed: %s\n", dest_str, NetworkErrorString(WSAGetLastError()));
                 return false;
@@ -920,14 +920,10 @@ bool IsBadPort(uint16_t port)
     case 1720:  // h323hostcall
     case 1723:  // pptp
     case 2049:  // nfs
-    case 3306:  // MySQL
-    case 3389:  // RDP / Windows Remote Desktop
     case 3659:  // apple-sasl / PasswordServer
     case 4045:  // lockd
     case 5060:  // sip
     case 5061:  // sips
-    case 5432:  // PostgreSQL
-    case 5900:  // VNC
     case 6000:  // X11
     case 6566:  // sane-port
     case 6665:  // Alternate IRC
@@ -937,7 +933,6 @@ bool IsBadPort(uint16_t port)
     case 6669:  // Alternate IRC
     case 6697:  // IRC + TLS
     case 10080: // Amanda
-    case 27017: // MongoDB
         return true;
     }
     return false;

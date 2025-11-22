@@ -1,4 +1,4 @@
-// Copyright (c) 2021-2022 The Bitcoin Core developers
+// Copyright (c) 2021-2022 The QTC Core developers
 // Distributed under the MIT software license, see the accompanying
 // file COPYING or http://www.opensource.org/licenses/mit-license.php.
 
@@ -17,9 +17,9 @@ void util::TraceThread(std::string_view thread_name, std::function<void()> threa
 {
     util::ThreadRename(std::string{thread_name});
     try {
-        LogInfo("%s thread start", thread_name);
+        LogPrintf("%s thread start\n", thread_name);
         thread_func();
-        LogInfo("%s thread exit", thread_name);
+        LogPrintf("%s thread exit\n", thread_name);
     } catch (const std::exception& e) {
         PrintExceptionContinue(&e, thread_name);
         throw;

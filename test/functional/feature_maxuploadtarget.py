@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-# Copyright (c) 2015-2022 The Bitcoin Core developers
+# Copyright (c) 2015-2022 The Quantum Coin Core developers
 # Distributed under the MIT software license, see the accompanying
 # file COPYING or http://www.opensource.org/licenses/mit-license.php.
 """Test behavior of -maxuploadtarget.
@@ -21,7 +21,7 @@ from test_framework.messages import (
     msg_mempool,
 )
 from test_framework.p2p import P2PInterface
-from test_framework.test_framework import BitcoinTestFramework
+from test_framework.test_framework import Quantum CoinTestFramework
 from test_framework.util import (
     assert_equal,
     mine_large_block,
@@ -41,9 +41,10 @@ class TestP2PConn(P2PInterface):
         pass
 
     def on_block(self, message):
-        self.block_receive_map[message.block.hash_int] += 1
+        message.block.calc_sha256()
+        self.block_receive_map[message.block.sha256] += 1
 
-class MaxUploadTest(BitcoinTestFramework):
+class MaxUploadTest(Quantum CoinTestFramework):
 
     def set_test_params(self):
         self.setup_clean_chain = True
@@ -51,6 +52,7 @@ class MaxUploadTest(BitcoinTestFramework):
         self.extra_args = [[
             f"-maxuploadtarget={UPLOAD_TARGET_MB}M",
         ]]
+        self.supports_cli = False
 
     def assert_uploadtarget_state(self, *, target_reached, serve_historical_blocks):
         """Verify the node's current upload target state via the `getnettotals` RPC call."""

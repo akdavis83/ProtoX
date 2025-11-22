@@ -1,12 +1,12 @@
 #!/usr/bin/env python3
-# Copyright (c) 2018-2022 The Bitcoin Core developers
+# Copyright (c) 2018-2022 The Quantum Coin Core developers
 # Distributed under the MIT software license, see the accompanying
 # file COPYING or http://www.opensource.org/licenses/mit-license.php.
 """Test createwallet arguments.
 """
 
 from test_framework.descriptors import descsum_create
-from test_framework.test_framework import BitcoinTestFramework
+from test_framework.test_framework import Quantum CoinTestFramework
 from test_framework.util import (
     assert_equal,
     assert_raises_rpc_error,
@@ -18,7 +18,7 @@ from test_framework.wallet_util import generate_keypair, WalletUnlock
 EMPTY_PASSPHRASE_MSG = "Empty string given as passphrase, wallet will not be encrypted."
 
 
-class CreateWalletTest(BitcoinTestFramework):
+class CreateWalletTest(Quantum CoinTestFramework):
     def set_test_params(self):
         self.num_nodes = 1
 
@@ -167,13 +167,15 @@ class CreateWalletTest(BitcoinTestFramework):
         assert_raises_rpc_error(-4, 'descriptors argument must be set to "true"; it is no longer possible to create a legacy wallet.', self.nodes[0].createwallet, wallet_name="legacy", descriptors=False)
 
         self.log.info("Check that the version number is being logged correctly")
-        with node.assert_debug_log(expected_msgs=[], unexpected_msgs=["Last client version = "]):
+        with node.assert_debug_log(expected_msgs=[], unexpected_msgs=["Last client version = ", "Wallet file version = "]):
             node.createwallet("version_check")
         wallet = node.get_wallet_rpc("version_check")
+        wallet_version = wallet.getwalletinfo()["walletversion"]
         client_version = node.getnetworkinfo()["version"]
         wallet.unloadwallet()
         with node.assert_debug_log(
-            expected_msgs=[f"Last client version = {client_version}"]
+            expected_msgs=[f"Last client version = {client_version}", f"Wallet file version = {wallet_version}"],
+            unexpected_msgs=["Wallet file version = 10500"]
         ):
             node.loadwallet("version_check")
 

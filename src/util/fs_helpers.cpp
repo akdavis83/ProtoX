@@ -1,11 +1,11 @@
 // Copyright (c) 2009-2010 Satoshi Nakamoto
-// Copyright (c) 2009-present The Bitcoin Core developers
+// Copyright (c) 2009-present The QTC Core developers
 // Distributed under the MIT software license, see the accompanying
 // file COPYING or http://www.opensource.org/licenses/mit-license.php.
 
 #include <util/fs_helpers.h>
 
-#include <bitcoin-build-config.h> // IWYU pragma: keep
+#include <qtc-build-config.h> // IWYU pragma: keep
 
 #include <logging.h>
 #include <sync.h>
@@ -29,11 +29,6 @@
 #include <io.h>
 #include <shlobj.h>
 #endif // WIN32
-
-#ifdef __APPLE__
-#include <sys/mount.h>
-#include <sys/param.h>
-#endif
 
 /** Mutex to protect dir_locks. */
 static GlobalMutex cs_dir_locks;
@@ -303,15 +298,3 @@ std::optional<fs::perms> InterpretPermString(const std::string& s)
         return std::nullopt;
     }
 }
-
-#ifdef __APPLE__
-FSType GetFilesystemType(const fs::path& path)
-{
-    if (struct statfs fs_info; statfs(path.c_str(), &fs_info)) {
-        return FSType::ERROR;
-    } else if (std::string_view{fs_info.f_fstypename} == "exfat") {
-        return FSType::EXFAT;
-    }
-    return FSType::OTHER;
-}
-#endif

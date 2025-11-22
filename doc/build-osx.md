@@ -2,7 +2,7 @@
 
 **Updated for MacOS [15](https://www.apple.com/macos/macos-sequoia/)**
 
-This guide describes how to build bitcoind, command-line utilities, and GUI on macOS.
+This guide describes how to build qtcd, command-line utilities, and GUI on macOS.
 
 ## Preparation
 
@@ -16,7 +16,7 @@ macOS comes with a built-in Terminal located in:
 ### 1. Xcode Command Line Tools
 
 The Xcode Command Line Tools are a collection of build tools for macOS.
-These tools must be installed in order to build Bitcoin Core from source.
+These tools must be installed in order to build Quantum Coin Core from source.
 
 To install, run the following command from your terminal:
 
@@ -48,39 +48,39 @@ See [dependencies.md](dependencies.md) for a complete overview.
 To install, run the following from your terminal:
 
 ``` bash
-brew install cmake boost pkgconf libevent capnp
+brew install cmake boost pkgconf libevent
 ```
 
-#### Wallet Dependencies
-
-If you do not need wallet functionality, you can use `-DENABLE_WALLET=OFF` in
-the `cmake -B` step below.
-
-SQLite is required, but since macOS ships with a useable `sqlite` package, you don't need to
-install anything.
-
-#### IPC Dependencies
-
-If you do not need IPC functionality (see [multiprocess.md](multiprocess.md))
-you can omit `capnp` and use `-DENABLE_IPC=OFF` in the `cmake -B` step below.
-
-### 4. Clone Bitcoin repository
+### 4. Clone Quantum Coin repository
 
 `git` should already be installed by default on your system.
-Now that all the required dependencies are installed, let's clone the Bitcoin Core repository to a directory.
+Now that all the required dependencies are installed, let's clone the Quantum Coin Core repository to a directory.
 All build scripts and commands will run from this directory.
 
 ``` bash
-git clone https://github.com/bitcoin/bitcoin.git
+git clone https://github.com/qtc/qtc.git
 ```
 
 ### 5. Install Optional Dependencies
+
+#### Wallet Dependencies
+
+It is not necessary to build wallet functionality to run `qtcd` or  `qtc-qt`.
+
+###### Descriptor Wallet Support
+
+`sqlite` is required to support for descriptor wallets.
+
+macOS ships with a useable `sqlite` package, meaning you don't need to
+install anything.
+
+---
 
 #### GUI Dependencies
 
 ###### Qt
 
-Bitcoin Core includes a GUI built with the cross-platform Qt Framework. To compile the GUI, we need to install
+Quantum Coin Core includes a GUI built with the cross-platform Qt Framework. To compile the GUI, we need to install
 Qt, libqrencode and pass `-DBUILD_GUI=ON`. Skip if you don't intend to use the GUI.
 
 ``` bash
@@ -88,7 +88,7 @@ brew install qt@6
 ```
 
 Note: Building with Qt binaries downloaded from the Qt website is not officially supported.
-See the notes in [#7714](https://github.com/bitcoin/bitcoin/issues/7714).
+See the notes in [#7714](https://github.com/qtc/qtc/issues/7714).
 
 ###### libqrencode
 
@@ -117,6 +117,19 @@ For more information on ZMQ, see: [zmq.md](zmq.md)
 
 ---
 
+### IPC Dependencies
+
+Compiling IPC-enabled binaries with `-DENABLE_IPC=ON` requires the following dependency.
+Skip if you do not need IPC functionality.
+
+```bash
+brew install capnp
+```
+
+For more information on IPC, see: [multiprocess.md](multiprocess.md).
+
+---
+
 #### Test Suite Dependencies
 
 There is an included test suite that is useful for testing code changes when developing.
@@ -130,14 +143,14 @@ brew install python
 
 #### Deploy Dependencies
 
-You can [deploy](#3-deploy-optional) a `.zip` containing the Bitcoin Core application.
+You can [deploy](#3-deploy-optional) a `.zip` containing the Quantum Coin Core application.
 It is required that you have `python` and `zip` installed.
 
-## Building Bitcoin Core
+## Building Quantum Coin Core
 
 ### 1. Configuration
 
-There are many ways to configure Bitcoin Core, here are a few common examples:
+There are many ways to configure Quantum Coin Core, here are a few common examples:
 
 ##### Wallet (only SQlite) and GUI Support:
 
@@ -166,11 +179,11 @@ cmake -B build -LH
 ### 2. Compile
 
 After configuration, you are ready to compile.
-Run the following in your terminal to compile Bitcoin Core:
+Run the following in your terminal to compile Quantum Coin Core:
 
 ``` bash
-cmake --build build     # Append "-j N" here for N parallel jobs.
-ctest --test-dir build  # Append "-j N" for N parallel tests.
+cmake --build build     # Use "-j N" here for N parallel jobs.
+ctest --test-dir build  # Use "-j N" for N parallel tests. Some tests are disabled if Python 3 is not available.
 ```
 
 ### 3. Deploy (optional)
@@ -181,45 +194,45 @@ You can also create a  `.zip` containing the `.app` bundle by running the follow
 cmake --build build --target deploy
 ```
 
-## Running Bitcoin Core
+## Running Quantum Coin Core
 
-Bitcoin Core should now be available at `./build/bin/bitcoind`.
-If you compiled support for the GUI, it should be available at `./build/bin/bitcoin-qt`.
+Quantum Coin Core should now be available at `./build/bin/qtcd`.
+If you compiled support for the GUI, it should be available at `./build/bin/qtc-qt`.
 
-There is also a multifunction command line interface at `./build/bin/bitcoin`
-supporting subcommands like `bitcoin node`, `bitcoin gui`, `bitcoin rpc`, and
-others that can be listed with `bitcoin help`.
+There is also a multifunction command line interface at `./build/bin/qtc`
+supporting subcommands like `qtc node`, `qtc gui`, `qtc rpc`, and
+others that can be listed with `qtc help`.
 
-The first time you run `bitcoind` or `bitcoin-qt`, it will start downloading the blockchain.
+The first time you run `qtcd` or `qtc-qt`, it will start downloading the blockchain.
 This process could take many hours, or even days on slower than average systems.
 
 By default, blockchain and wallet data files will be stored in:
 
 ``` bash
-/Users/${USER}/Library/Application Support/Bitcoin/
+/Users/${USER}/Library/Application Support/Quantum Coin/
 ```
 
 Before running, you may create an empty configuration file:
 
 ```shell
-mkdir -p "/Users/${USER}/Library/Application Support/Bitcoin"
+mkdir -p "/Users/${USER}/Library/Application Support/Quantum Coin"
 
-touch "/Users/${USER}/Library/Application Support/Bitcoin/bitcoin.conf"
+touch "/Users/${USER}/Library/Application Support/Quantum Coin/qtc.conf"
 
-chmod 600 "/Users/${USER}/Library/Application Support/Bitcoin/bitcoin.conf"
+chmod 600 "/Users/${USER}/Library/Application Support/Quantum Coin/qtc.conf"
 ```
 
 You can monitor the download process by looking at the debug.log file:
 
 ```shell
-tail -f $HOME/Library/Application\ Support/Bitcoin/debug.log
+tail -f $HOME/Library/Application\ Support/Quantum Coin/debug.log
 ```
 
 ## Other commands:
 
 ```shell
-./build/bin/bitcoind -daemon      # Starts the bitcoin daemon.
-./build/bin/bitcoin-cli --help    # Outputs a list of command-line options.
-./build/bin/bitcoin-cli help      # Outputs a list of RPC commands when the daemon is running.
-./build/bin/bitcoin-qt -server # Starts the bitcoin-qt server mode, allows bitcoin-cli control
+./build/bin/qtcd -daemon      # Starts the qtc daemon.
+./build/bin/qtc-cli --help    # Outputs a list of command-line options.
+./build/bin/qtc-cli help      # Outputs a list of RPC commands when the daemon is running.
+./build/bin/qtc-qt -server # Starts the qtc-qt server mode, allows qtc-cli control
 ```

@@ -1,9 +1,9 @@
-// Copyright (c) 2011-present The Bitcoin Core developers
+// Copyright (c) 2011-present The QTC Core developers
 // Distributed under the MIT software license, see the accompanying
 // file COPYING or http://www.opensource.org/licenses/mit-license.php.
 
-#include <policy/fees/block_policy_estimator.h>
-#include <policy/fees/block_policy_estimator_args.h>
+#include <policy/fees.h>
+#include <policy/fees_args.h>
 #include <policy/policy.h>
 #include <test/util/txmempool.h>
 #include <txmempool.h>
@@ -37,7 +37,7 @@ BOOST_AUTO_TEST_CASE(BlockPolicyEstimates)
     // added to the mempool by their associate fee
     // txHashes[j] is populated with transactions either of
     // fee = basefee * (j+1)
-    std::vector<Txid> txHashes[10];
+    std::vector<uint256> txHashes[10];
 
     // Create a transaction template
     CScript garbage;
@@ -77,7 +77,8 @@ BOOST_AUTO_TEST_CASE(BlockPolicyEstimates)
                                                                                       /*has_no_mempool_parents=*/true)};
                     m_node.validation_signals->TransactionAddedToMempool(tx_info, mpool.GetAndIncrementSequence());
                 }
-                txHashes[j].push_back(tx.GetHash());
+                uint256 hash = tx.GetHash();
+                txHashes[j].push_back(hash);
             }
         }
         //Create blocks where higher fee txs are included more often
@@ -177,7 +178,8 @@ BOOST_AUTO_TEST_CASE(BlockPolicyEstimates)
                                                                                       /*has_no_mempool_parents=*/true)};
                     m_node.validation_signals->TransactionAddedToMempool(tx_info, mpool.GetAndIncrementSequence());
                 }
-                txHashes[j].push_back(tx.GetHash());
+                uint256 hash = tx.GetHash();
+                txHashes[j].push_back(hash);
             }
         }
         {
@@ -240,7 +242,8 @@ BOOST_AUTO_TEST_CASE(BlockPolicyEstimates)
                                                                                       /*has_no_mempool_parents=*/true)};
                     m_node.validation_signals->TransactionAddedToMempool(tx_info, mpool.GetAndIncrementSequence());
                 }
-                CTransactionRef ptx = mpool.get(tx.GetHash());
+                uint256 hash = tx.GetHash();
+                CTransactionRef ptx = mpool.get(hash);
                 if (ptx)
                     block.push_back(ptx);
 

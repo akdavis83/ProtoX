@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-# Copyright (c) 2017-2022 The Bitcoin Core developers
+# Copyright (c) 2017-2022 The Quantum Coin Core developers
 # Distributed under the MIT software license, see the accompanying
 # file COPYING or http://www.opensource.org/licenses/mit-license.php.
 """Test that mempool.dat is both backward and forward compatible between versions
@@ -11,14 +11,14 @@ Previous releases are required by this test, see test/README.md.
 """
 
 from test_framework.blocktools import COINBASE_MATURITY
-from test_framework.test_framework import BitcoinTestFramework
+from test_framework.test_framework import Quantum CoinTestFramework
 from test_framework.wallet import (
     MiniWallet,
     MiniWalletMode,
 )
 
 
-class MempoolCompatibilityTest(BitcoinTestFramework):
+class MempoolCompatibilityTest(Quantum CoinTestFramework):
     def set_test_params(self):
         self.num_nodes = 2
         self.setup_clean_chain = True
@@ -56,7 +56,6 @@ class MempoolCompatibilityTest(BitcoinTestFramework):
         self.log.info("Move mempool.dat from old to new node")
         old_node_mempool = old_node.chain_path / "mempool.dat"
         new_node_mempool = new_node.chain_path / "mempool.dat"
-        new_node_mempool.unlink()
         old_node_mempool.rename(new_node_mempool)
 
         self.log.info("Start new node and verify mempool contains the tx")

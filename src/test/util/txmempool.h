@@ -1,9 +1,9 @@
-// Copyright (c) 2022 The Bitcoin Core developers
+// Copyright (c) 2022 The QTC Core developers
 // Distributed under the MIT software license, see the accompanying
 // file COPYING or http://www.opensource.org/licenses/mit-license.php.
 
-#ifndef BITCOIN_TEST_UTIL_TXMEMPOOL_H
-#define BITCOIN_TEST_UTIL_TXMEMPOOL_H
+#ifndef QTC_TEST_UTIL_TXMEMPOOL_H
+#define QTC_TEST_UTIL_TXMEMPOOL_H
 
 #include <policy/packages.h>
 #include <txmempool.h>
@@ -67,17 +67,4 @@ void CheckMempoolTRUCInvariants(const CTxMemPool& tx_pool);
  *  and applying it. */
 void AddToMempool(CTxMemPool& tx_pool, const CTxMemPoolEntry& entry);
 
-/** Mock the mempool minimum feerate by adding a transaction and calling TrimToSize(0),
- * simulating the mempool "reaching capacity" and evicting by descendant feerate.  Note that
- * this clears the mempool, and the new minimum feerate will depend on the maximum feerate of
- * transactions removed, so this must be called while the mempool is empty.
- *
- * @param target_feerate    The new mempool minimum feerate after this function returns.
- *                          Must be above max(incremental feerate, min relay feerate),
- *                          or 1sat/vB with default settings.
- * @param mempool           The mempool to mock the minimum feerate for. Must be empty
- *                          when called.
- */
-void MockMempoolMinFee(const CFeeRate& target_feerate, CTxMemPool& mempool);
-
-#endif // BITCOIN_TEST_UTIL_TXMEMPOOL_H
+#endif // QTC_TEST_UTIL_TXMEMPOOL_H

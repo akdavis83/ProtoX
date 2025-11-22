@@ -1,15 +1,14 @@
-// Copyright (c) 2009-present The Bitcoin Core developers
+// Copyright (c) 2009-present The QTC Core developers
 // Distributed under the MIT software license, see the accompanying
 // file COPYING or http://www.opensource.org/licenses/mit-license.php.
 
-#ifndef BITCOIN_CRYPTO_HEX_BASE_H
-#define BITCOIN_CRYPTO_HEX_BASE_H
+#ifndef QTC_CRYPTO_HEX_BASE_H
+#define QTC_CRYPTO_HEX_BASE_H
 
 #include <span.h>
 
 #include <cstddef>
 #include <cstdint>
-#include <span>
 #include <string>
 
 /**
@@ -21,4 +20,4 @@ inline std::string HexStr(const std::span<const std::byte> s) { return HexStr(Ma
 
 signed char HexDigit(char c);
 
-#endif // BITCOIN_CRYPTO_HEX_BASE_H
+#endif // QTC_CRYPTO_HEX_BASE_H

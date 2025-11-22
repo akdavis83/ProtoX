@@ -1,9 +1,9 @@
-// Copyright (c) 2021 The Bitcoin Core developers
+// Copyright (c) 2021 The QTC Core developers
 // Distributed under the MIT software license, see the accompanying
 // file COPYING or http://www.opensource.org/licenses/mit-license.php.
 
-#ifndef BITCOIN_IPC_PROTOCOL_H
-#define BITCOIN_IPC_PROTOCOL_H
+#ifndef QTC_IPC_PROTOCOL_H
+#define QTC_IPC_PROTOCOL_H
 
 #include <interfaces/init.h>
 
@@ -58,9 +58,6 @@ public:
     //! clients and servers independently.
     virtual void serve(int fd, const char* exe_name, interfaces::Init& init, const std::function<void()>& ready_fn = {}) = 0;
 
-    //! Disconnect any incoming connections that are still connected.
-    virtual void disconnectIncoming() = 0;
-
     //! Add cleanup callback to interface that will run when the interface is
     //! deleted.
     virtual void addCleanup(std::type_index type, void* iface, std::function<void()> cleanup) = 0;
@@ -70,4 +67,4 @@ public:
 };
 } // namespace ipc
 
-#endif // BITCOIN_IPC_PROTOCOL_H
+#endif // QTC_IPC_PROTOCOL_H

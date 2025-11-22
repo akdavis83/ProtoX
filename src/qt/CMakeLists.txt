@@ -1,4 +1,4 @@
-# Copyright (c) 2023-present The Bitcoin Core developers
+# Copyright (c) 2023-present The Quantum Coin Core developers
 # Distributed under the MIT software license, see the accompanying
 # file COPYING or https://opensource.org/license/mit/.
 
@@ -50,41 +50,31 @@ endfunction()
 
 set(CMAKE_AUTOMOC ON)
 set(CMAKE_AUTOMOC_MOC_OPTIONS "-p${CMAKE_CURRENT_SOURCE_DIR}")
+set(CMAKE_AUTORCC ON)
 set(CMAKE_AUTOUIC ON)
 set(CMAKE_AUTOUIC_SEARCH_PATHS forms)
 
-set(CMAKE_AUTORCC OFF)
-configure_file(bitcoin_locale.qrc bitcoin_locale.qrc USE_SOURCE_PERMISSIONS COPYONLY)
-qt6_add_resources(BITCOIN_QRC bitcoin.qrc)
-qt6_add_resources(BITCOIN_LOCALE_QRC ${CMAKE_CURRENT_BINARY_DIR}/bitcoin_locale.qrc)
-# See: https://bugreports.qt.io/browse/QTBUG-141858.
-get_target_property(warn_flags warn_interface INTERFACE_COMPILE_OPTIONS)
-if("-Wtrailing-whitespace=any" IN_LIST warn_flags)
-  set_source_files_properties(${BITCOIN_QRC} ${BITCOIN_LOCALE_QRC} PROPERTIES COMPILE_OPTIONS -Wno-trailing-whitespace)
-endif()
-unset(warn_flags)
+configure_file(qtc_locale.qrc qtc_locale.qrc USE_SOURCE_PERMISSIONS COPYONLY)
 
-# The bitcoinqt sources have to include headers in
+# The qtcqt sources have to include headers in
 # order to parse them to collect translatable strings.
-add_library(bitcoinqt STATIC EXCLUDE_FROM_ALL
+add_library(qtcqt STATIC EXCLUDE_FROM_ALL
   bantablemodel.cpp
   bantablemodel.h
-  bitcoin.cpp
-  bitcoin.h
-  bitcoinaddressvalidator.cpp
-  bitcoinaddressvalidator.h
-  bitcoinamountfield.cpp
-  bitcoinamountfield.h
-  bitcoingui.cpp
-  bitcoingui.h
-  bitcoinunits.cpp
-  bitcoinunits.h
+  qtc.cpp
+  qtc.h
+  qtcaddressvalidator.cpp
+  qtcaddressvalidator.h
+  qtcamountfield.cpp
+  qtcamountfield.h
+  qtcgui.cpp
+  qtcgui.h
+  qtcunits.cpp
+  qtcunits.h
   clientmodel.cpp
   clientmodel.h
   csvmodelwriter.cpp
   csvmodelwriter.h
-  freespacechecker.cpp
-  freespacechecker.h
   guiutil.cpp
   guiutil.h
   initexecutor.cpp
@@ -127,15 +117,15 @@ add_library(bitcoinqt STATIC EXCLUDE_FROM_ALL
   utilitydialog.h
   $<$<PLATFORM_ID:Windows>:winshutdownmonitor.cpp>
   $<$<PLATFORM_ID:Windows>:winshutdownmonitor.h>
-  ${BITCOIN_QRC}
-  ${BITCOIN_LOCALE_QRC}
+  qtc.qrc
+  ${CMAKE_CURRENT_BINARY_DIR}/qtc_locale.qrc
 )
-target_compile_definitions(bitcoinqt
+target_compile_definitions(qtcqt
   PUBLIC
     QT_NO_KEYWORDS
     QT_USE_QSTRINGBUILDER
 )
-target_include_directories(bitcoinqt
+target_include_directories(qtcqt
   PUBLIC
     $<BUILD_INTERFACE:${PROJECT_SOURCE_DIR}/src>
 )
@@ -143,12 +133,12 @@ set_property(SOURCE macnotificationhandler.mm
   # Ignore warnings "'NSUserNotificationCenter' is deprecated: first deprecated in macOS 11.0".
   APPEND PROPERTY COMPILE_OPTIONS -Wno-deprecated-declarations
 )
-target_link_libraries(bitcoinqt
+target_link_libraries(qtcqt
   PUBLIC
     Qt6::Widgets
   PRIVATE
     core_interface
-    bitcoin_cli
+    qtc_cli
     leveldb
     Boost::headers
     $<TARGET_NAME_IF_EXISTS:QRencode::QRencode>
@@ -157,7 +147,7 @@ target_link_libraries(bitcoinqt
 )
 
 if(ENABLE_WALLET)
-  target_sources(bitcoinqt
+  target_sources(qtcqt
     PRIVATE
       addressbookpage.cpp
       addressbookpage.h
@@ -220,21 +210,21 @@ if(ENABLE_WALLET)
       walletview.cpp
       walletview.h
   )
-  target_link_libraries(bitcoinqt
+  target_link_libraries(qtcqt
     PRIVATE
-      bitcoin_wallet
+      qtc_wallet
       Qt6::Network
   )
 endif()
 
 if(WITH_DBUS)
-  target_link_libraries(bitcoinqt PRIVATE Qt6::DBus)
+  target_link_libraries(qtcqt PRIVATE Qt6::DBus)
 endif()
 
 if(qt_lib_type STREQUAL "STATIC_LIBRARY")
   # We want to define static plugins to link ourselves, thus preventing
   # automatic linking against a "sane" set of default static plugins.
-  qt6_import_plugins(bitcoinqt
+  qt6_import_plugins(qtcqt
     EXCLUDE_BY_TYPE
       accessiblebridge
       platforms
@@ -253,43 +243,48 @@ if(qt_lib_type STREQUAL "STATIC_LIBRARY")
   )
 endif()
 
-add_subdirectory(locale)
+file(GLOB ts_files RELATIVE ${CMAKE_CURRENT_SOURCE_DIR} locale/*.ts)
+set_source_files_properties(${ts_files} PROPERTIES OUTPUT_LOCATION ${CMAKE_CURRENT_BINARY_DIR}/locale)
+qt6_add_lrelease(qtcqt
+  TS_FILES ${ts_files}
+  OPTIONS -silent
+)
 
-add_executable(bitcoin-qt
+add_executable(qtc-qt
   main.cpp
-  ../init/bitcoin-qt.cpp
+  ../init/qtc-qt.cpp
 )
 
-add_windows_resources(bitcoin-qt res/bitcoin-qt-res.rc)
-add_windows_application_manifest(bitcoin-qt)
+add_windows_resources(qtc-qt res/qtc-qt-res.rc)
+add_windows_application_manifest(qtc-qt)
 
-target_link_libraries(bitcoin-qt
+target_link_libraries(qtc-qt
   core_interface
-  bitcoinqt
-  bitcoin_node
+  qtcqt
+  qtc_node
 )
 
-import_plugins(bitcoin-qt)
-install_binary_component(bitcoin-qt HAS_MANPAGE)
+import_plugins(qtc-qt)
+install_binary_component(qtc-qt HAS_MANPAGE)
 if(WIN32)
-  set_target_properties(bitcoin-qt PROPERTIES WIN32_EXECUTABLE TRUE)
+  set_target_properties(qtc-qt PROPERTIES WIN32_EXECUTABLE TRUE)
 endif()
 
 if(ENABLE_IPC)
-  add_executable(bitcoin-gui
+  add_executable(qtc-gui
     main.cpp
-    ../init/bitcoin-gui.cpp
+    ../init/qtc-gui.cpp
   )
-  target_link_libraries(bitcoin-gui
+  target_link_libraries(qtc-gui
     core_interface
-    bitcoinqt
-    bitcoin_node
-    bitcoin_ipc
+    qtcqt
+    qtc_node
+    qtc_ipc
   )
-  import_plugins(bitcoin-gui)
-  install_binary_component(bitcoin-gui INTERNAL)
+  import_plugins(qtc-gui)
+  install_binary_component(qtc-gui)
   if(WIN32)
-    set_target_properties(bitcoin-gui PROPERTIES WIN32_EXECUTABLE TRUE)
+    set_target_properties(qtc-gui PROPERTIES WIN32_EXECUTABLE TRUE)
   endif()
 endif()
 
@@ -297,18 +292,69 @@ if(BUILD_GUI_TESTS)
   add_subdirectory(test)
 endif()
 
+
+# Gets sources to be parsed to gather translatable strings.
+function(get_translatable_sources var)
+  set(result)
+  set(targets)
+  foreach(dir IN ITEMS ${ARGN})
+    get_directory_property(dir_targets DIRECTORY ${PROJECT_SOURCE_DIR}/${dir} BUILDSYSTEM_TARGETS)
+    list(APPEND targets ${dir_targets})
+  endforeach()
+  foreach(target IN LISTS targets)
+    get_target_property(target_sources ${target} SOURCES)
+    if(target_sources)
+      foreach(source IN LISTS target_sources)
+        # Get an expression from the generator expression, if any.
+        if(source MATCHES ":([^>]+)>$")
+          set(source ${CMAKE_MATCH_1})
+        endif()
+        cmake_path(GET source EXTENSION LAST_ONLY ext)
+        if(ext STREQUAL ".qrc")
+          continue()
+        endif()
+        if(NOT IS_ABSOLUTE source)
+          get_target_property(target_source_dir ${target} SOURCE_DIR)
+          cmake_path(APPEND target_source_dir ${source} OUTPUT_VARIABLE source)
+        endif()
+        get_property(is_generated
+          SOURCE  ${source} TARGET_DIRECTORY ${target}
+          PROPERTY GENERATED
+        )
+        if(NOT is_generated)
+          list(APPEND result ${source})
+        endif()
+      endforeach()
+    endif()
+  endforeach()
+  set(${var} ${result} PARENT_SCOPE)
+endfunction()
+
 find_program(XGETTEXT_EXECUTABLE xgettext)
+find_program(SED_EXECUTABLE sed)
 if(NOT XGETTEXT_EXECUTABLE)
   add_custom_target(translate
     COMMAND ${CMAKE_COMMAND} -E echo "Error: GNU gettext-tools not found"
   )
+elseif(NOT SED_EXECUTABLE)
+  add_custom_target(translate
+    COMMAND ${CMAKE_COMMAND} -E echo "Error: GNU sed not found"
+  )
 else()
-  add_custom_target(translate COMMAND ${CMAKE_COMMAND}
-    -D "PROJECT_SOURCE_DIR=${PROJECT_SOURCE_DIR}"
-    -D "COPYRIGHT_HOLDERS=${COPYRIGHT_HOLDERS}"
-    -D "LCONVERT_EXECUTABLE=$<TARGET_FILE:Qt6::lconvert>"
-    -D "LUPDATE_EXECUTABLE=$<TARGET_FILE:Qt6::lupdate>"
-    -D "XGETTEXT_EXECUTABLE=${XGETTEXT_EXECUTABLE}"
-    -P ${PROJECT_SOURCE_DIR}/share/qt/translate.cmake
+  set(translatable_sources_directories src src/qt src/util)
+  if(ENABLE_WALLET)
+    list(APPEND translatable_sources_directories src/wallet)
+  endif()
+  get_translatable_sources(translatable_sources ${translatable_sources_directories})
+  get_translatable_sources(qt_translatable_sources src/qt)
+  file(GLOB ui_files ${CMAKE_CURRENT_SOURCE_DIR}/forms/*.ui)
+  add_custom_target(translate
+    COMMAND ${CMAKE_COMMAND} -E env XGETTEXT=${XGETTEXT_EXECUTABLE} COPYRIGHT_HOLDERS=${COPYRIGHT_HOLDERS} ${Python3_EXECUTABLE} ${PROJECT_SOURCE_DIR}/share/qt/extract_strings_qt.py ${translatable_sources}
+    COMMAND Qt6::lupdate -no-obsolete -I ${PROJECT_SOURCE_DIR}/src -locations relative ${CMAKE_CURRENT_SOURCE_DIR}/qtcstrings.cpp ${ui_files} ${qt_translatable_sources} -ts ${CMAKE_CURRENT_SOURCE_DIR}/locale/qtc_en.ts
+    COMMAND Qt6::lconvert -drop-translations -o ${CMAKE_CURRENT_SOURCE_DIR}/locale/qtc_en.xlf -i ${CMAKE_CURRENT_SOURCE_DIR}/locale/qtc_en.ts
+    COMMAND ${SED_EXECUTABLE} -i.old -e "s|source-language=\"en\" target-language=\"en\"|source-language=\"en\"|" -e "/<target xml:space=\"preserve\"><\\/target>/d" ${CMAKE_CURRENT_SOURCE_DIR}/locale/qtc_en.xlf
+    COMMAND ${CMAKE_COMMAND} -E rm ${CMAKE_CURRENT_SOURCE_DIR}/locale/qtc_en.xlf.old
+    WORKING_DIRECTORY ${PROJECT_SOURCE_DIR}/src
+    VERBATIM
   )
 endif()

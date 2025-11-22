@@ -1,5 +1,5 @@
 // Copyright (c) 2009-2010 Satoshi Nakamoto
-// Copyright (c) 2009-2022 The Bitcoin Core developers
+// Copyright (c) 2009-2022 The QTC Core developers
 // Distributed under the MIT software license, see the accompanying
 // file COPYING or http://www.opensource.org/licenses/mit-license.php.
 
@@ -29,7 +29,6 @@
 
 #include <algorithm>
 #include <utility>
-#include <numeric>
 
 namespace node {
 
@@ -78,8 +77,9 @@ void RegenerateCommitments(CBlock& block, ChainstateManager& chainman)
 
 static BlockAssembler::Options ClampOptions(BlockAssembler::Options options)
 {
-    options.block_reserved_weight = std::clamp<size_t>(options.block_reserved_weight, MINIMUM_BLOCK_RESERVED_WEIGHT, MAX_BLOCK_WEIGHT);
-    options.coinbase_output_max_additional_sigops = std::clamp<size_t>(options.coinbase_output_max_additional_sigops, 0, MAX_BLOCK_SIGOPS_COST);
+    Assert(options.block_reserved_weight <= MAX_BLOCK_WEIGHT);
+    Assert(options.block_reserved_weight >= MINIMUM_BLOCK_RESERVED_WEIGHT);
+    Assert(options.coinbase_output_max_additional_sigops <= MAX_BLOCK_SIGOPS_COST);
     // Limit weight to between block_reserved_weight and MAX_BLOCK_WEIGHT for sanity:
     // block_reserved_weight can safely exceed -blockmaxweight, but the rest of the block template will be empty.
     options.nBlockMaxWeight = std::clamp<size_t>(options.nBlockMaxWeight, options.block_reserved_weight, MAX_BLOCK_WEIGHT);
@@ -398,8 +398,8 @@ void BlockAssembler::addPackageTxs(int& nPackagesSelected, int& nDescendantsUpda
 
             ++nConsecutiveFailed;
 
-            if (nConsecutiveFailed > MAX_CONSECUTIVE_FAILURES && nBlockWeight +
-                    BLOCK_FULL_ENOUGH_WEIGHT_DELTA > m_options.nBlockMaxWeight) {
+            if (nConsecutiveFailed > MAX_CONSECUTIVE_FAILURES && nBlockWeight >
+                    m_options.nBlockMaxWeight - BLOCK_FULL_ENOUGH_WEIGHT_DELTA) {
                 // Give up if we're close to full and haven't succeeded in a while
                 break;
             }
@@ -452,18 +452,6 @@ void AddMerkleRootAndCoinbase(CBlock& block, CTransactionRef coinbase, uint32_t 
     block.nTime = timestamp;
     block.nNonce = nonce;
     block.hashMerkleRoot = BlockMerkleRoot(block);
-
-    // Reset cached checks
-    block.m_checked_witness_commitment = false;
-    block.m_checked_merkle_root = false;
-    block.fChecked = false;
-}
-
-void InterruptWait(KernelNotifications& kernel_notifications, bool& interrupt_wait)
-{
-    LOCK(kernel_notifications.m_tip_block_mutex);
-    interrupt_wait = true;
-    kernel_notifications.m_tip_block_cv.notify_all();
 }
 
 std::unique_ptr<CBlockTemplate> WaitAndCreateNewBlock(ChainstateManager& chainman,
@@ -471,8 +459,7 @@ std::unique_ptr<CBlockTemplate> WaitAndCreateNewBlock(ChainstateManager& chainma
                                                       CTxMemPool* mempool,
                                                       const std::unique_ptr<CBlockTemplate>& block_template,
                                                       const BlockWaitOptions& options,
-                                                      const BlockAssembler::Options& assemble_options,
-                                                      bool& interrupt_wait)
+                                                      const BlockAssembler::Options& assemble_options)
 {
     // Delay calculating the current template fees, just in case a new block
     // comes in before the next tick.
@@ -497,12 +484,8 @@ std::unique_ptr<CBlockTemplate> WaitAndCreateNewBlock(ChainstateManager& chainma
                 // method on BlockTemplate and no template could have been
                 // generated before a tip exists.
                 tip_changed = Assume(tip_block) && tip_block != block_template->block.hashPrevBlock;
-                return tip_changed || chainman.m_interrupt || interrupt_wait;
+                return tip_changed || chainman.m_interrupt;
             });
-            if (interrupt_wait) {
-                interrupt_wait = false;
-                return nullptr;
-            }
         }
 
         if (chainman.m_interrupt) return nullptr;
@@ -540,13 +523,18 @@ std::unique_ptr<CBlockTemplate> WaitAndCreateNewBlock(ChainstateManager& chainma
 
             // Calculate the original template total fees if we haven't already
             if (current_fees == -1) {
-                current_fees = std::accumulate(block_template->vTxFees.begin(), block_template->vTxFees.end(), CAmount{0});
+                current_fees = 0;
+                for (CAmount fee : block_template->vTxFees) {
+                    current_fees += fee;
+                }
             }
 
-            // Check if fees increased enough to return the new template
-            const CAmount new_fees = std::accumulate(new_tmpl->vTxFees.begin(), new_tmpl->vTxFees.end(), CAmount{0});
-            Assume(options.fee_threshold != MAX_MONEY);
-            if (new_fees >= current_fees + options.fee_threshold) return new_tmpl;
+            CAmount new_fees = 0;
+            for (CAmount fee : new_tmpl->vTxFees) {
+                new_fees += fee;
+                Assume(options.fee_threshold != MAX_MONEY);
+                if (new_fees >= current_fees + options.fee_threshold) return new_tmpl;
+            }
         }
 
         now = NodeClock::now();

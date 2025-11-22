@@ -1,5 +1,6 @@
 {
   "version": 3,
+  "cmakeMinimumRequired": {"major": 3, "minor": 21, "patch": 0},
   "configurePresets": [
     {
       "name": "vs2022",
@@ -34,6 +35,44 @@
       }
     },
     {
+      "name": "vs2022-nogui",
+      "displayName": "Build using 'Visual Studio 17 2022' (no GUI, minimal deps)",
+      "condition": {"type": "equals", "lhs": "${hostSystemName}", "rhs": "Windows"},
+      "generator": "Visual Studio 17 2022",
+      "architecture": "x64",
+      "binaryDir": "${sourceDir}/build_vs2022_nogui",
+      "toolchainFile": "$env{VCPKG_ROOT}\\scripts\\buildsystems\\vcpkg.cmake",
+      "cacheVariables": {
+        "ENABLE_WALLET": "OFF",
+        "BUILD_QTC_TESTS": "OFF",
+        "VCPKG_TARGET_TRIPLET": "x64-windows",
+        "BUILD_GUI": "OFF",
+        "WITH_QRENCODE": "OFF",
+        "WITH_ZMQ": "OFF",
+        "VCPKG_MANIFEST_FEATURES": ""
+      }
+    },
+    {
+      "name": "vs2022-static-nogui",
+      "displayName": "Build using 'Visual Studio 17 2022' static (no GUI, minimal deps)",
+      "condition": {"type": "equals", "lhs": "${hostSystemName}", "rhs": "Windows"},
+      "generator": "Visual Studio 17 2022",
+      "architecture": "x64",
+      "binaryDir": "${sourceDir}/build_vs2022_static_nogui",
+      "toolchainFile": "$env{VCPKG_ROOT}\\scripts\\buildsystems\\vcpkg.cmake",
+      "cacheVariables": {
+        "ENABLE_WALLET": "OFF",
+        "BUILD_QTC_TESTS": "OFF",
+        "VCPKG_TARGET_TRIPLET": "x64-windows-static",
+        "BUILD_GUI": "OFF",
+        "WITH_QRENCODE": "OFF",
+        "WITH_ZMQ": "OFF",
+        "VCPKG_MANIFEST_FEATURES": "",
+        "VCPKG_MANIFEST_NO_DEFAULT_FEATURES": "ON",
+        "OQS_MINIMAL_BUILD": "OFF"
+      }
+    },
+    {
       "name": "libfuzzer",
       "displayName": "Build for fuzzing with libfuzzer, and sanitizers enabled",
       "binaryDir": "${sourceDir}/build_fuzz",
@@ -61,7 +100,6 @@
       "name": "dev-mode",
       "displayName": "Developer mode, with all features/dependencies enabled",
       "binaryDir": "${sourceDir}/build_dev_mode",
-      "errors": {"dev": true},
       "cacheVariables": {
         "BUILD_BENCH": "ON",
         "BUILD_CLI": "ON",
@@ -83,6 +121,16 @@
         "WITH_USDT": "ON",
         "WITH_ZMQ": "ON"
       }
+    }
+  ],
+  "buildPresets": [
+    {
+      "name": "vs2022-nogui",
+      "configurePreset": "vs2022-nogui"
+    },
+    {
+      "name": "vs2022-static-nogui",
+      "configurePreset": "vs2022-static-nogui"
     }
   ]
 }

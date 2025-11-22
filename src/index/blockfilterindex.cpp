@@ -1,39 +1,18 @@
-// Copyright (c) 2018-2022 The Bitcoin Core developers
+// Copyright (c) 2018-2022 The QTC Core developers
 // Distributed under the MIT software license, see the accompanying
 // file COPYING or http://www.opensource.org/licenses/mit-license.php.
 
-#include <index/blockfilterindex.h>
+#include <map>
 
-#include <blockfilter.h>
-#include <chain.h>
+#include <clientversion.h>
 #include <common/args.h>
 #include <dbwrapper.h>
-#include <flatfile.h>
 #include <hash.h>
-#include <index/base.h>
-#include <interfaces/chain.h>
-#include <interfaces/types.h>
+#include <index/blockfilterindex.h>
 #include <logging.h>
-#include <serialize.h>
-#include <streams.h>
-#include <sync.h>
-#include <uint256.h>
-#include <util/check.h>
-#include <util/fs.h>
-#include <util/hasher.h>
-#include <util/syserror.h>
-
-#include <cerrno>
-#include <exception>
-#include <ios>
-#include <map>
-#include <optional>
-#include <span>
-#include <stdexcept>
-#include <string>
-#include <tuple>
-#include <utility>
-#include <vector>
+#include <node/blockstorage.h>
+#include <undo.h>
+#include <util/fs_helpers.h>
 
 /* The index database stores three items for each block: the disk location of the encoded filter,
  * its dSHA256 hash, and the header. Those belonging to blocks on the active chain are indexed by
@@ -146,8 +125,8 @@ bool BlockFilterIndex::CustomInit(const std::optional<interfaces::BlockRef>& blo
         // indicate database corruption or a disk failure, and starting the index would cause
         // further corruption.
         if (m_db->Exists(DB_FILTER_POS)) {
-            LogError("Cannot read current %s state; index may be corrupted",
-                      GetName());
+            LogError("%s: Cannot read current %s state; index may be corrupted\n",
+                         __func__, GetName());
             return false;
         }
 
@@ -159,7 +138,7 @@ bool BlockFilterIndex::CustomInit(const std::optional<interfaces::BlockRef>& blo
     if (block) {
         auto op_last_header = ReadFilterHeader(block->height, block->hash);
         if (!op_last_header) {
-            LogError("Cannot read last block filter header; index may be corrupted");
+            LogError("Cannot read last block filter header; index may be corrupted\n");
             return false;
         }
         m_last_header = *op_last_header;
@@ -175,16 +154,11 @@ bool BlockFilterIndex::CustomCommit(CDBBatch& batch)
     // Flush current filter file to disk.
     AutoFile file{m_filter_fileseq->Open(pos)};
     if (file.IsNull()) {
-        LogError("Failed to open filter file %d", pos.nFile);
+        LogError("%s: Failed to open filter file %d\n", __func__, pos.nFile);
         return false;
     }
     if (!file.Commit()) {
-        LogError("Failed to commit filter file %d", pos.nFile);
-        (void)file.fclose();
-        return false;
-    }
-    if (file.fclose() != 0) {
-        LogError("Failed to close filter file %d after commit: %s", pos.nFile, SysErrorString(errno));
+        LogError("%s: Failed to commit filter file %d\n", __func__, pos.nFile);
         return false;
     }
 
@@ -205,13 +179,13 @@ bool BlockFilterIndex::ReadFilterFromDisk(const FlatFilePos& pos, const uint256&
     try {
         filein >> block_hash >> encoded_filter;
         if (Hash(encoded_filter) != hash) {
-            LogError("Checksum mismatch in filter decode.");
+            LogError("Checksum mismatch in filter decode.\n");
             return false;
         }
         filter = BlockFilter(GetFilterType(), block_hash, std::move(encoded_filter), /*skip_decode_check=*/true);
     }
     catch (const std::exception& e) {
-        LogError("Failed to deserialize block filter from disk: %s", e.what());
+        LogError("%s: Failed to deserialize block filter from disk: %s\n", __func__, e.what());
         return false;
     }
 
@@ -222,28 +196,23 @@ size_t BlockFilterIndex::WriteFilterToDisk(FlatFilePos& pos, const BlockFilter& 
 {
     assert(filter.GetFilterType() == GetFilterType());
 
-    uint64_t data_size{
+    size_t data_size =
         GetSerializeSize(filter.GetBlockHash()) +
-        GetSerializeSize(filter.GetEncodedFilter())};
+        GetSerializeSize(filter.GetEncodedFilter());
 
     // If writing the filter would overflow the file, flush and move to the next one.
     if (pos.nPos + data_size > MAX_FLTR_FILE_SIZE) {
         AutoFile last_file{m_filter_fileseq->Open(pos)};
         if (last_file.IsNull()) {
-            LogError("Failed to open filter file %d", pos.nFile);
+            LogPrintf("%s: Failed to open filter file %d\n", __func__, pos.nFile);
             return 0;
         }
         if (!last_file.Truncate(pos.nPos)) {
-            LogError("Failed to truncate filter file %d", pos.nFile);
+            LogPrintf("%s: Failed to truncate filter file %d\n", __func__, pos.nFile);
             return 0;
         }
         if (!last_file.Commit()) {
-            LogError("Failed to commit filter file %d", pos.nFile);
-            (void)last_file.fclose();
-            return 0;
-        }
-        if (last_file.fclose() != 0) {
-            LogError("Failed to close filter file %d after commit: %s", pos.nFile, SysErrorString(errno));
+            LogPrintf("%s: Failed to commit filter file %d\n", __func__, pos.nFile);
             return 0;
         }
 
@@ -255,23 +224,17 @@ size_t BlockFilterIndex::WriteFilterToDisk(FlatFilePos& pos, const BlockFilter& 
     bool out_of_space;
     m_filter_fileseq->Allocate(pos, data_size, out_of_space);
     if (out_of_space) {
-        LogError("out of disk space");
+        LogPrintf("%s: out of disk space\n", __func__);
         return 0;
     }
 
     AutoFile fileout{m_filter_fileseq->Open(pos)};
     if (fileout.IsNull()) {
-        LogError("Failed to open filter file %d", pos.nFile);
+        LogPrintf("%s: Failed to open filter file %d\n", __func__, pos.nFile);
         return 0;
     }
 
     fileout << filter.GetBlockHash() << filter.GetEncodedFilter();
-
-    if (fileout.fclose() != 0) {
-        LogError("Failed to close filter file %d: %s", pos.nFile, SysErrorString(errno));
-        return 0;
-    }
-
     return data_size;
 }
 
@@ -283,8 +246,8 @@ std::optional<uint256> BlockFilterIndex::ReadFilterHeader(int height, const uint
     }
 
     if (read_out.first != expected_block_hash) {
-        LogError("previous block header belongs to unexpected block %s; expected %s",
-                 read_out.first.ToString(), expected_block_hash.ToString());
+        LogError("%s: previous block header belongs to unexpected block %s; expected %s\n",
+                         __func__, read_out.first.ToString(), expected_block_hash.ToString());
         return std::nullopt;
     }
 
@@ -311,7 +274,9 @@ bool BlockFilterIndex::Write(const BlockFilter& filter, uint32_t block_height, c
     value.second.header = filter_header;
     value.second.pos = m_next_filter_pos;
 
-    m_db->Write(DBHeightKey(block_height), value);
+    if (!m_db->Write(DBHeightKey(block_height), value)) {
+        return false;
+    }
 
     m_next_filter_pos.nPos += bytes_written;
     return true;
@@ -324,15 +289,15 @@ bool BlockFilterIndex::Write(const BlockFilter& filter, uint32_t block_height, c
     db_it.Seek(key);
 
     if (!db_it.GetKey(key) || key.height != height) {
-        LogError("unexpected key in %s: expected (%c, %d)",
-                  index_name, DB_BLOCK_HEIGHT, height);
+        LogError("%s: unexpected key in %s: expected (%c, %d)\n",
+                 __func__, index_name, DB_BLOCK_HEIGHT, height);
         return false;
     }
 
     std::pair<uint256, DBVal> value;
     if (!db_it.GetValue(value)) {
-        LogError("unable to read value in %s at key (%c, %d)",
-                 index_name, DB_BLOCK_HEIGHT, height);
+        LogError("%s: unable to read value in %s at key (%c, %d)\n",
+                 __func__, index_name, DB_BLOCK_HEIGHT, height);
         return false;
     }
 
@@ -356,7 +321,7 @@ bool BlockFilterIndex::CustomRemove(const interfaces::BlockInfo& block)
     // But since this creates new references to the filter, the position should get updated here
     // atomically as well in case Commit fails.
     batch.Write(DB_FILTER_POS, m_next_filter_pos);
-    m_db->WriteBatch(batch);
+    if (!m_db->WriteBatch(batch)) return false;
 
     // Update cached header to the previous block hash
     m_last_header = *Assert(ReadFilterHeader(block.height - 1, *Assert(block.prev_hash)));
@@ -385,12 +350,12 @@ static bool LookupRange(CDBWrapper& db, const std::string& index_name, int start
                         const CBlockIndex* stop_index, std::vector<DBVal>& results)
 {
     if (start_height < 0) {
-        LogError("start height (%d) is negative", start_height);
+        LogError("%s: start height (%d) is negative\n", __func__, start_height);
         return false;
     }
     if (start_height > stop_index->nHeight) {
-        LogError("start height (%d) is greater than stop height (%d)",
-                 start_height, stop_index->nHeight);
+        LogError("%s: start height (%d) is greater than stop height (%d)\n",
+                     __func__, start_height, stop_index->nHeight);
         return false;
     }
 
@@ -407,8 +372,8 @@ static bool LookupRange(CDBWrapper& db, const std::string& index_name, int start
 
         size_t i = static_cast<size_t>(height - start_height);
         if (!db_it->GetValue(values[i])) {
-            LogError("unable to read value in %s at key (%c, %d)",
-                     index_name, DB_BLOCK_HEIGHT, height);
+            LogError("%s: unable to read value in %s at key (%c, %d)\n",
+                         __func__, index_name, DB_BLOCK_HEIGHT, height);
             return false;
         }
 
@@ -431,8 +396,8 @@ static bool LookupRange(CDBWrapper& db, const std::string& index_name, int start
         }
 
         if (!db.Read(DBHashKey(block_hash), results[i])) {
-            LogError("unable to read value in %s at key (%c, %s)",
-                     index_name, DB_BLOCK_HASH, block_hash.ToString());
+            LogError("%s: unable to read value in %s at key (%c, %s)\n",
+                         __func__, index_name, DB_BLOCK_HASH, block_hash.ToString());
             return false;
         }
     }

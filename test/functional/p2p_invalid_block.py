@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-# Copyright (c) 2015-2021 The Bitcoin Core developers
+# Copyright (c) 2015-2021 The Quantum Coin Core developers
 # Distributed under the MIT software license, see the accompanying
 # file COPYING or http://www.opensource.org/licenses/mit-license.php.
 """Test node responses to invalid blocks.
@@ -24,14 +24,14 @@ from test_framework.blocktools import (
 from test_framework.messages import COIN
 from test_framework.p2p import P2PDataStore
 from test_framework.script import OP_TRUE
-from test_framework.test_framework import BitcoinTestFramework
+from test_framework.test_framework import Quantum CoinTestFramework
 from test_framework.util import (
     assert_equal,
     assert_not_equal,
 )
 
 
-class InvalidBlockRequestTest(BitcoinTestFramework):
+class InvalidBlockRequestTest(Quantum CoinTestFramework):
     def set_test_params(self):
         self.num_nodes = 1
         self.setup_clean_chain = True
@@ -77,13 +77,13 @@ class InvalidBlockRequestTest(BitcoinTestFramework):
         block2 = create_block(tip, create_coinbase(height), block_time, txlist=[tx1, tx2])
         block_time += 1
         block2.solve()
-        orig_hash = block2.hash_int
+        orig_hash = block2.sha256
         block2_orig = copy.deepcopy(block2)
 
         # Mutate block 2
         block2.vtx.append(tx2)
         assert_equal(block2.hashMerkleRoot, block2.calc_merkle_root())
-        assert_equal(orig_hash, block2.hash_int)
+        assert_equal(orig_hash, block2.rehash())
         assert_not_equal(block2_orig.vtx, block2.vtx)
 
         peer.send_blocks_and_test([block2], node, success=False, reject_reason='bad-txns-duplicate')
@@ -115,7 +115,7 @@ class InvalidBlockRequestTest(BitcoinTestFramework):
         # Update tip info
         height += 1
         block_time += 1
-        tip = block2_orig.hash_int
+        tip = int(block2_orig.hash, 16)
 
         # Complete testing of CVE-2018-17144, by checking for the inflation bug.
         # Create a block that spends the output of a tx in a previous block.

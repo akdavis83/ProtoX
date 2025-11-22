@@ -1,9 +1,9 @@
-// Copyright (c) 2019-2021 The Bitcoin Core developers
+// Copyright (c) 2019-2021 The QTC Core developers
 // Distributed under the MIT software license, see the accompanying
 // file COPYING or http://www.opensource.org/licenses/mit-license.php.
 
-#ifndef BITCOIN_NET_TYPES_H
-#define BITCOIN_NET_TYPES_H
+#ifndef QTC_NET_TYPES_H
+#define QTC_NET_TYPES_H
 
 #include <cstdint>
 #include <map>
@@ -57,4 +57,4 @@ UniValue BanMapToJson(const banmap_t& bans);
  */
 void BanMapFromJson(const UniValue& bans_json, banmap_t& bans);
 
-#endif // BITCOIN_NET_TYPES_H
+#endif // QTC_NET_TYPES_H

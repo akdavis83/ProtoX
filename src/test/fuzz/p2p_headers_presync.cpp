@@ -1,4 +1,4 @@
-// Copyright (c) 2024-present The Bitcoin Core developers
+// Copyright (c) 2024-present The QTC Core developers
 // Distributed under the MIT software license, see the accompanying
 // file COPYING or http://www.opensource.org/licenses/mit-license.php.
 
@@ -70,7 +70,7 @@ void HeadersSyncSetup::ResetAndInitialize()
 
     for (auto conn_type : conn_types) {
         CAddress addr{};
-        m_connections.push_back(new CNode(id++, nullptr, addr, 0, 0, addr, "", conn_type, false, 0));
+        m_connections.push_back(new CNode(id++, nullptr, addr, 0, 0, addr, "", conn_type, false));
         CNode& p2p_node = *m_connections.back();
 
         connman.Handshake(
@@ -139,7 +139,7 @@ CBlock ConsumeBlock(FuzzedDataProvider& fuzzed_data_provider, const uint256& pre
     tx.vout[0].nValue = 0;
     tx.vin[0].scriptSig.resize(2);
     block.vtx.push_back(MakeTransactionRef(tx));
-    block.hashMerkleRoot = block.vtx[0]->GetHash().ToUint256();
+    block.hashMerkleRoot = block.vtx[0]->GetHash();
     return block;
 }
 

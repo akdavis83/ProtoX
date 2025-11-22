@@ -1,6 +1,56 @@
-# Developer Notes
+Developer Notes
+===============
 
-## Coding Style (General)
+<!-- markdown-toc start -->
+**Table of Contents**
+
+- [Developer Notes](#developer-notes)
+    - [Coding Style (General)](#coding-style-general)
+    - [Coding Style (C++)](#coding-style-c)
+    - [Coding Style (Python)](#coding-style-python)
+    - [Coding Style (Doxygen-compatible comments)](#coding-style-doxygen-compatible-comments)
+      - [Generating Documentation](#generating-documentation)
+    - [Development tips and tricks](#development-tips-and-tricks)
+        - [Compiling for debugging](#compiling-for-debugging)
+        - [Show sources in debugging](#show-sources-in-debugging)
+        - [`debug.log`](#debuglog)
+        - [Signet, testnet, and regtest modes](#signet-testnet-and-regtest-modes)
+        - [DEBUG_LOCKORDER](#debug_lockorder)
+        - [DEBUG_LOCKCONTENTION](#debug_lockcontention)
+        - [Valgrind suppressions file](#valgrind-suppressions-file)
+        - [Compiling for test coverage](#compiling-for-test-coverage)
+        - [Performance profiling with perf](#performance-profiling-with-perf)
+        - [Sanitizers](#sanitizers)
+    - [Locking/mutex usage notes](#lockingmutex-usage-notes)
+    - [Threads](#threads)
+    - [Ignoring IDE/editor files](#ignoring-ideeditor-files)
+- [Development guidelines](#development-guidelines)
+    - [General Quantum Coin Core](#general-qtc-core)
+    - [Wallet](#wallet)
+    - [General C++](#general-c)
+    - [C++ data structures](#c-data-structures)
+    - [Strings and formatting](#strings-and-formatting)
+    - [Shadowing](#shadowing)
+    - [Lifetimebound](#lifetimebound)
+    - [Threads and synchronization](#threads-and-synchronization)
+    - [Scripts](#scripts)
+        - [Shebang](#shebang)
+    - [Source code organization](#source-code-organization)
+    - [GUI](#gui)
+    - [Subtrees](#subtrees)
+    - [Upgrading LevelDB](#upgrading-leveldb)
+      - [File Descriptor Counts](#file-descriptor-counts)
+      - [Consensus Compatibility](#consensus-compatibility)
+    - [Scripted diffs](#scripted-diffs)
+        - [Suggestions and examples](#suggestions-and-examples)
+    - [Release notes](#release-notes)
+    - [RPC interface guidelines](#rpc-interface-guidelines)
+    - [Internal interface guidelines](#internal-interface-guidelines)
+
+<!-- markdown-toc end -->
+
+Coding Style (General)
+----------------------
 
 Various coding styles have been used during the history of the codebase,
 and the result is not very consistent. However, we're now trying to converge to
@@ -10,17 +60,18 @@ commits.
 
 Do not submit patches solely to modify the style of existing code.
 
-## Coding Style (C++)
+Coding Style (C++)
+------------------
 
 - **Indentation and whitespace rules** as specified in
 [src/.clang-format](/src/.clang-format). You can use the provided
 [clang-format-diff script](/contrib/devtools/README.md#clang-format-diffpy)
 tool to clean up patches automatically before submission.
   - Braces on new lines for classes, functions, methods.
-  - Braces on the same line for everything else (including structs).
+  - Braces on the same line for everything else.
   - 4 space indentation (no tabs) for every block except namespaces.
   - No indentation for `public`/`protected`/`private` or for `namespace`.
-  - No extra spaces inside parentheses; don't do `( this )`.
+  - No extra spaces inside parenthesis; don't do `( this )`.
   - No space after function names; one space after `if`, `for` and `while`.
   - If an `if` only has a single-statement `then`-clause, it can appear
     on the same line as the `if`, without braces. In every other case,
@@ -120,7 +171,8 @@ public:
 } // namespace foo
 ```
 
-### Coding Style (C++ functions and methods)
+Coding Style (C++ functions and methods)
+--------------------
 
 - When ordering function parameters, place input parameters first, then any
   in-out parameters, followed by any output parameters.
@@ -140,7 +192,8 @@ public:
   non-optional in-out and output parameters should usually be references, as
   they cannot be null.
 
-### Coding Style (C++ named arguments)
+Coding Style (C++ named arguments)
+------------------------------
 
 When passing named arguments, use a format that clang-tidy understands. The
 argument names can otherwise not be verified by clang-tidy.
@@ -184,13 +237,16 @@ To run clang-tidy on the changed source lines:
 git diff | ( cd ./src/ && clang-tidy-diff -p2 -path ../build -j $(nproc) )
 ```
 
-## Coding Style (Python)
+Coding Style (Python)
+---------------------
 
 Refer to [/test/functional/README.md#style-guidelines](/test/functional/README.md#style-guidelines).
 
-## Coding Style (Doxygen-compatible comments)
 
-Bitcoin Core uses [Doxygen](https://www.doxygen.nl/) to generate its official documentation.
+Coding Style (Doxygen-compatible comments)
+------------------------------------------
+
+Quantum Coin Core uses [Doxygen](https://www.doxygen.nl/) to generate its official documentation.
 
 Use Doxygen-compatible comment blocks for functions, methods, and fields.
 
@@ -263,7 +319,7 @@ but the above styles are favored.
 
 Recommendations:
 
-- Avoid duplicating type and input/output information in function
+- Avoiding duplicating type and input/output information in function
   descriptions.
 
 - Use backticks (&#96;&#96;) to refer to `argument` names in function and
@@ -292,7 +348,8 @@ Linux: `sudo apt install doxygen graphviz`
 
 MacOS: `brew install doxygen graphviz`
 
-## Development tips and tricks
+Development tips and tricks
+---------------------------
 
 ### Compiling for debugging
 
@@ -336,14 +393,14 @@ ln -s /path/to/project/root/src src
 
 4. If your IDE has an option for this, change your breakpoints to use the file name only.
 
-### debug.log
+### `debug.log`
 
 If the code is behaving strangely, take a look in the `debug.log` file in the data directory;
 error and debugging messages are written there.
 
 Debug logging can be enabled on startup with the `-debug` and `-loglevel`
-configuration options and toggled while bitcoind is running with the `logging`
-RPC.  For instance, launching bitcoind with `-debug` or `-debug=1` will turn on
+configuration options and toggled while qtcd is running with the `logging`
+RPC.  For instance, launching qtcd with `-debug` or `-debug=1` will turn on
 all log categories and `-loglevel=trace` will turn on all log severity levels.
 
 The Qt code routes `qDebug()` output to `debug.log` under category "qt": run with `-debug=qt`
@@ -353,7 +410,7 @@ to see it.
 
 If you are testing multi-machine code that needs to operate across the internet,
 you can run with either the `-signet` or the `-testnet4` config option to test
-with "play bitcoins" on a test network.
+with "play qtcs" on a test network.
 
 If you are testing something that can run on one machine, run with the
 `-regtest` option.  In regression test mode, blocks can be created on demand;
@@ -361,7 +418,7 @@ see [test/functional/](/test/functional) for tests that run in `-regtest` mode.
 
 ### DEBUG_LOCKORDER
 
-Bitcoin Core is a multi-threaded application, and deadlocks or other
+Quantum Coin Core is a multi-threaded application, and deadlocks or other
 multi-threading bugs can be very difficult to track down. The `-DCMAKE_BUILD_TYPE=Debug`
 build option adds `-DDEBUG_LOCKORDER` to the compiler flags. This inserts
 run-time checks to keep track of which locks are held and adds warnings to the
@@ -377,9 +434,9 @@ The `-DCMAKE_BUILD_TYPE=Debug` build option adds `-DDEBUG_LOCKCONTENTION` to the
 compiler flags. You may also enable it manually by building with `-DDEBUG_LOCKCONTENTION`
 added to your CPPFLAGS, i.e. `-DAPPEND_CPPFLAGS="-DDEBUG_LOCKCONTENTION"`.
 
-You can then use the `-debug=lock` configuration option at bitcoind startup or
-`bitcoin-cli logging '["lock"]'` at runtime to turn on lock contention logging.
-It can be toggled off again with `bitcoin-cli logging [] '["lock"]'`.
+You can then use the `-debug=lock` configuration option at qtcd startup or
+`qtc-cli logging '["lock"]'` at runtime to turn on lock contention logging.
+It can be toggled off again with `qtc-cli logging [] '["lock"]'`.
 
 ### Assertions and Checks
 
@@ -415,15 +472,15 @@ other input.
 
 Valgrind is a programming tool for memory debugging, memory leak detection, and
 profiling. The repo contains a Valgrind suppressions file
-([`valgrind.supp`](https://github.com/bitcoin/bitcoin/blob/master/contrib/valgrind.supp))
+([`valgrind.supp`](https://github.com/qtc/qtc/blob/master/contrib/valgrind.supp))
 which includes known Valgrind warnings in our dependencies that cannot be fixed
 in-tree. Example use:
 
 ```shell
-$ valgrind --suppressions=contrib/valgrind.supp build/bin/test_bitcoin
+$ valgrind --suppressions=contrib/valgrind.supp build/bin/test_qtc
 $ valgrind --suppressions=contrib/valgrind.supp --leak-check=full \
-      --show-leak-kinds=all build/bin/test_bitcoin --log_level=test_suite
-$ valgrind -v --leak-check=full build/bin/bitcoind -printtoconsole
+      --show-leak-kinds=all build/bin/test_qtc --log_level=test_suite
+$ valgrind -v --leak-check=full build/bin/qtcd -printtoconsole
 $ ./build/test/functional/test_runner.py --valgrind
 ```
 
@@ -442,7 +499,7 @@ cmake -B build -DCMAKE_BUILD_TYPE=Coverage
 cmake --build build
 cmake -P build/Coverage.cmake
 
-# A coverage report will now be accessible at `./build/test_bitcoin.coverage/index.html`,
+# A coverage report will now be accessible at `./build/test_qtc.coverage/index.html`,
 # which covers unit tests, and `./build/total.coverage/index.html`, which covers
 # unit and functional tests.
 ```
@@ -475,7 +532,7 @@ cmake -B build -DCMAKE_C_COMPILER="clang" \
    -DAPPEND_CFLAGS="-fprofile-instr-generate -fcoverage-mapping" \
    -DAPPEND_CXXFLAGS="-fprofile-instr-generate -fcoverage-mapping" \
    -DAPPEND_LDFLAGS="-fprofile-instr-generate -fcoverage-mapping"
-cmake --build build # Append "-j N" here for N parallel jobs.
+cmake --build build # Use "-j N" here for N parallel jobs.
 ```
 
 Generating the raw profile data based on `ctest` and functional tests execution:
@@ -485,8 +542,8 @@ Generating the raw profile data based on `ctest` and functional tests execution:
 mkdir -p build/raw_profile_data
 
 # Run tests to generate profiles
-LLVM_PROFILE_FILE="$(pwd)/build/raw_profile_data/%m_%p.profraw" ctest --test-dir build # Append "-j N" here for N parallel jobs.
-LLVM_PROFILE_FILE="$(pwd)/build/raw_profile_data/%m_%p.profraw" build/test/functional/test_runner.py # Append "-j N" here for N parallel jobs
+LLVM_PROFILE_FILE="$(pwd)/build/raw_profile_data/%m_%p.profraw" ctest --test-dir build # Use "-j N" here for N parallel jobs.
+LLVM_PROFILE_FILE="$(pwd)/build/raw_profile_data/%m_%p.profraw" build/test/functional/test_runner.py # Use "-j N" here for N parallel jobs
 
 # Merge all the raw profile data into a single file
 find build/raw_profile_data -name "*.profraw" | xargs llvm-profdata merge -o build/coverage.profdata
@@ -499,8 +556,8 @@ Generating the coverage report:
 
 ```shell
 llvm-cov show \
-    --object=build/bin/test_bitcoin \
-    --object=build/bin/bitcoind \
+    --object=build/bin/test_qtc \
+    --object=build/bin/qtcd \
     -Xdemangler=llvm-cxxfilt \
     --instr-profile=build/coverage.profdata \
     --ignore-filename-regex="src/crc32c/|src/leveldb/|src/minisketch/|src/secp256k1/|src/test/" \
@@ -509,7 +566,7 @@ llvm-cov show \
     --show-line-counts-or-regions \
     --show-expansions \
     --output-dir=build/coverage_report \
-    --project-title="Bitcoin Core Coverage Report"
+    --project-title="Quantum Coin Core Coverage Report"
 ```
 
 > **Note:** The "functions have mismatched data" warning can be safely ignored, the coverage report will still be generated correctly despite this warning.
@@ -526,7 +583,7 @@ cmake -B build \
    -DCMAKE_C_FLAGS="-fprofile-instr-generate -fcoverage-mapping" \
    -DCMAKE_CXX_FLAGS="-fprofile-instr-generate -fcoverage-mapping" \
    -DBUILD_FOR_FUZZING=ON
-cmake --build build # Append "-j N" here for N parallel jobs.
+cmake --build build # Use "-j N" here for N parallel jobs.
 ```
 
 Running fuzz tests with one or more targets
@@ -553,7 +610,7 @@ llvm-cov show \
     --show-line-counts-or-regions \
     --show-expansions \
     --output-dir=build/coverage_report \
-    --project-title="Bitcoin Core Fuzz Coverage Report"
+    --project-title="Quantum Coin Core Fuzz Coverage Report"
 ```
 
 The generated coverage report can be accessed at `build/coverage_report/index.html`.
@@ -582,13 +639,13 @@ Make sure you [understand the security
 trade-offs](https://lwn.net/Articles/420403/) of setting these kernel
 parameters.
 
-To profile a running bitcoind process for 60 seconds, you could use an
+To profile a running qtcd process for 60 seconds, you could use an
 invocation of `perf record` like this:
 
 ```sh
 $ perf record \
     -g --call-graph dwarf --per-thread -F 140 \
-    -p `pgrep bitcoind` -- sleep 60
+    -p `pgrep qtcd` -- sleep 60
 ```
 
 You could then analyze the results by running:
@@ -604,7 +661,7 @@ See the functional test documentation for how to invoke perf within tests.
 
 ### Sanitizers
 
-Bitcoin Core can be compiled with various "sanitizers" enabled, which add
+Quantum Coin Core can be compiled with various "sanitizers" enabled, which add
 instrumentation for issues regarding things like memory safety, thread race
 conditions, or undefined behavior. This is controlled with the
 `-DSANITIZERS` cmake build flag, which should be a comma separated list of
@@ -656,7 +713,8 @@ Additional resources:
  * [GCC Instrumentation Options](https://gcc.gnu.org/onlinedocs/gcc/Instrumentation-Options.html)
  * [Google Sanitizers Wiki](https://github.com/google/sanitizers/wiki)
 
-## Locking/mutex usage notes
+Locking/mutex usage notes
+-------------------------
 
 The code is multi-threaded and uses mutexes and the
 `LOCK` and `TRY_LOCK` macros to protect data structures.
@@ -672,72 +730,76 @@ between the various components is a goal, with any necessary locking
 done by the components (e.g. see the self-contained `FillableSigningProvider` class
 and its `cs_KeyStore` lock for example).
 
-## Threads
+Threads
+-------
 
-- [Main thread (`bitcoind`)](https://doxygen.bitcoincore.org/bitcoind_8cpp.html#a0ddf1224851353fc92bfbff6f499fa97)
-  : Started from `main()` in `bitcoind.cpp`. Responsible for starting up and
+- [Main thread (`qtcd`)](https://doxygen.qtccore.org/qtcd_8cpp.html#a0ddf1224851353fc92bfbff6f499fa97)
+  : Started from `main()` in `qtcd.cpp`. Responsible for starting up and
   shutting down the application.
 
-- [Init load (`b-initload`)](https://doxygen.bitcoincore.org/namespacenode.html#ab4305679079866f0f420f7dbf278381d)
+- [Init load (`b-initload`)](https://doxygen.qtccore.org/namespacenode.html#ab4305679079866f0f420f7dbf278381d)
   : Performs various loading tasks that are part of init but shouldn't block the node from being started: external block import,
    reindex, reindex-chainstate, main chain activation, spawn indexes background sync threads and mempool load.
 
-- [CCheckQueue::Loop (`b-scriptch.x`)](https://doxygen.bitcoincore.org/class_c_check_queue.html#a6e7fa51d3a25e7cb65446d4b50e6a987)
+- [CCheckQueue::Loop (`b-scriptch.x`)](https://doxygen.qtccore.org/class_c_check_queue.html#a6e7fa51d3a25e7cb65446d4b50e6a987)
   : Parallel script validation threads for transactions in blocks.
 
-- [ThreadHTTP (`b-http`)](https://doxygen.bitcoincore.org/httpserver_8cpp.html#abb9f6ea8819672bd9a62d3695070709c)
+- [ThreadHTTP (`b-http`)](https://doxygen.qtccore.org/httpserver_8cpp.html#abb9f6ea8819672bd9a62d3695070709c)
   : Libevent thread to listen for RPC and REST connections.
 
-- [HTTP worker threads(`b-httpworker.x`)](https://doxygen.bitcoincore.org/httpserver_8cpp.html#aa6a7bc27265043bc0193220c5ae3a55f)
+- [HTTP worker threads(`b-httpworker.x`)](https://doxygen.qtccore.org/httpserver_8cpp.html#aa6a7bc27265043bc0193220c5ae3a55f)
   : Threads to service RPC and REST requests.
 
-- [Indexer threads (`b-txindex`, etc)](https://doxygen.bitcoincore.org/class_base_index.html#a96a7407421fbf877509248bbe64f8d87)
+- [Indexer threads (`b-txindex`, etc)](https://doxygen.qtccore.org/class_base_index.html#a96a7407421fbf877509248bbe64f8d87)
   : One thread per indexer.
 
-- [SchedulerThread (`b-scheduler`)](https://doxygen.bitcoincore.org/class_c_scheduler.html#a14d2800815da93577858ea078aed1fba)
+- [SchedulerThread (`b-scheduler`)](https://doxygen.qtccore.org/class_c_scheduler.html#a14d2800815da93577858ea078aed1fba)
   : Does asynchronous background tasks like dumping wallet contents, dumping
   addrman and running asynchronous validationinterface callbacks.
 
-- [TorControlThread (`b-torcontrol`)](https://doxygen.bitcoincore.org/torcontrol_8cpp.html#a52a3efff23634500bb42c6474f306091)
+- [TorControlThread (`b-torcontrol`)](https://doxygen.qtccore.org/torcontrol_8cpp.html#a52a3efff23634500bb42c6474f306091)
   : Libevent thread for tor connections.
 
 - Net threads:
 
-  - [ThreadMessageHandler (`b-msghand`)](https://doxygen.bitcoincore.org/class_c_connman.html#aacdbb7148575a31bb33bc345e2bf22a9)
+  - [ThreadMessageHandler (`b-msghand`)](https://doxygen.qtccore.org/class_c_connman.html#aacdbb7148575a31bb33bc345e2bf22a9)
     : Application level message handling (sending and receiving). Almost
     all net_processing and validation logic runs on this thread.
 
-  - [ThreadDNSAddressSeed (`b-dnsseed`)](https://doxygen.bitcoincore.org/class_c_connman.html#aa7c6970ed98a4a7bafbc071d24897d13)
+  - [ThreadDNSAddressSeed (`b-dnsseed`)](https://doxygen.qtccore.org/class_c_connman.html#aa7c6970ed98a4a7bafbc071d24897d13)
     : Loads addresses of peers from the DNS.
 
   - ThreadMapPort (`b-mapport`)
     : Universal plug-and-play startup/shutdown.
 
-  - [ThreadSocketHandler (`b-net`)](https://doxygen.bitcoincore.org/class_c_connman.html#a765597cbfe99c083d8fa3d61bb464e34)
+  - [ThreadSocketHandler (`b-net`)](https://doxygen.qtccore.org/class_c_connman.html#a765597cbfe99c083d8fa3d61bb464e34)
     : Sends/Receives data from peers on port 8333.
 
-  - [ThreadOpenAddedConnections (`b-addcon`)](https://doxygen.bitcoincore.org/class_c_connman.html#a0b787caf95e52a346a2b31a580d60a62)
+  - [ThreadOpenAddedConnections (`b-addcon`)](https://doxygen.qtccore.org/class_c_connman.html#a0b787caf95e52a346a2b31a580d60a62)
     : Opens network connections to added nodes.
 
-  - [ThreadOpenConnections (`b-opencon`)](https://doxygen.bitcoincore.org/class_c_connman.html#a55e9feafc3bab78e5c9d408c207faa45)
+  - [ThreadOpenConnections (`b-opencon`)](https://doxygen.qtccore.org/class_c_connman.html#a55e9feafc3bab78e5c9d408c207faa45)
     : Initiates new connections to peers.
 
-  - [ThreadI2PAcceptIncoming (`b-i2paccept`)](https://doxygen.bitcoincore.org/class_c_connman.html#a57787b4f9ac847d24065fbb0dd6e70f8)
+  - [ThreadI2PAcceptIncoming (`b-i2paccept`)](https://doxygen.qtccore.org/class_c_connman.html#a57787b4f9ac847d24065fbb0dd6e70f8)
     : Listens for and accepts incoming I2P connections through the I2P SAM proxy.
 
-# Development guidelines
+Development guidelines
+============================
 
 A few non-style-related recommendations for developers, as well as points to
-pay attention to for reviewers of Bitcoin Core code.
+pay attention to for reviewers of Quantum Coin Core code.
 
-## General Bitcoin Core
+General Quantum Coin Core
+----------------------
 
 - New features should be exposed on RPC first, then can be made available in the GUI.
 
   - *Rationale*: RPC allows for better automatic testing. The test suite for
     the GUI is very limited.
 
-## Logging
+Logging
+-------
 
 The macros `LogInfo`, `LogDebug`, `LogTrace`, `LogWarning` and `LogError` are available for
 logging messages. They should be used as follows:
@@ -775,7 +837,8 @@ Note that the format strings and parameters of `LogDebug` and `LogTrace`
 are only evaluated if the logging category is enabled, so you must be
 careful to avoid side-effects in those expressions.
 
-## General C++
+General C++
+-------------
 
 For general C++ guidelines, you may refer to the [C++ Core
 Guidelines](https://isocpp.github.io/CppCoreGuidelines/).
@@ -796,7 +859,8 @@ Common misconceptions are clarified in those sections:
 
   - *Rationale*: This avoids memory and resource leaks, and ensures exception safety.
 
-## C++ data structures
+C++ data structures
+--------------------
 
 - Never use the `std::map []` syntax when reading from a map, but instead use `.find()`.
 
@@ -889,7 +953,8 @@ int GetInt(Tabs tab)
 
 *Rationale*: The comment documents skipping `default:` label, and it complies with `clang-format` rules. The assertion prevents firing of `-Wreturn-type` warning on some compilers.
 
-## Strings and formatting
+Strings and formatting
+------------------------
 
 - Use `std::string`, avoid C string manipulation functions.
 
@@ -899,7 +964,7 @@ int GetInt(Tabs tab)
 
 - For `strprintf`, `LogInfo`, `LogDebug`, etc formatting characters don't need size specifiers (hh, h, l, ll, j, z, t, L) for arithmetic types.
 
-  - *Rationale*: Bitcoin Core uses tinyformat, which is type safe. Leave them out to avoid confusion.
+  - *Rationale*: Quantum Coin Core uses tinyformat, which is type safe. Leave them out to avoid confusion.
 
 - Use `.c_str()` sparingly. Its only valid use is to pass C++ strings to C functions that take NULL-terminated
   strings.
@@ -923,7 +988,8 @@ int GetInt(Tabs tab)
     checks. If a use of strings is sensitive to this, take care to check the string for embedded NULL characters first
     and reject it if there are any.
 
-## Shadowing
+Shadowing
+--------------
 
 Although the shadowing warning (`-Wshadow`) is not enabled by default (it prevents issues arising
 from using a different variable with the same name),
@@ -932,7 +998,8 @@ please name variables so that their names do not shadow variables defined in the
 When using nested cycles, do not name the inner cycle variable the same as in
 the outer cycle, etc.
 
-## Lifetimebound
+Lifetimebound
+--------------
 
 The [Clang `lifetimebound`
 attribute](https://clang.llvm.org/docs/AttributeReference.html#lifetimebound)
@@ -941,7 +1008,8 @@ potentially see a compile-time warning if the object has a shorter lifetime from
 the invalid use of a temporary. You can use the attribute by adding a `LIFETIMEBOUND`
 annotation defined in `src/attributes.h`; please grep the codebase for examples.
 
-## Threads and synchronization
+Threads and synchronization
+----------------------------
 
 - Prefer `Mutex` type to `RecursiveMutex` one.
 
@@ -1042,11 +1110,13 @@ TRY_LOCK(cs_vNodes, lockNodes);
 }
 ```
 
-## Scripts
+Scripts
+--------------------------
 
 Write scripts in Python or Rust rather than bash, when possible.
 
-## Source code organization
+Source code organization
+--------------------------
 
 - Implementation code should go into the `.cpp` file and not the `.h`, unless necessary due to template usage or
   when performance due to inlining is critical.
@@ -1080,7 +1150,8 @@ namespace {
 
   - *Rationale*: Avoids confusion about the namespace context.
 
-## GUI
+GUI
+-----
 
 - Do not display or manipulate dialogs in model code (classes `*Model`).
 
@@ -1101,42 +1172,30 @@ namespace {
   - *Rationale*: Blocking the GUI thread can increase latency, and lead to
     hangs and deadlocks.
 
-## Subtrees
+Subtrees
+----------
 
 Several parts of the repository are subtrees of software maintained elsewhere.
 
-Normally, these are maintained by active developers of Bitcoin Core, in which case
+Normally, these are maintained by active developers of Quantum Coin Core, in which case
 changes should go directly upstream without being PRed directly against the project.
 They will be merged back in the next subtree merge.
 
 Others are external projects without a tight relationship with our project. Changes
 to these should also be sent upstream, but bugfixes may also be prudent to PR against
-a Bitcoin Core subtree, so that they can be integrated quickly. Cosmetic changes
+a Quantum Coin Core subtree, so that they can be integrated quickly. Cosmetic changes
 should be taken upstream.
 
 There is a tool in `test/lint/git-subtree-check.sh` ([instructions](../test/lint#git-subtree-checksh))
 to check a subtree directory for consistency with its upstream repository.
 
-The tool instructions also include a list of the subtrees managed by Bitcoin Core.
-
-To fully verify or update a subtree, add it as a remote:
-
-```sh
-git remote add libmultiprocess https://github.com/bitcoin-core/libmultiprocess.git
-```
-
-To update the subtree:
-
-```sh
-git fetch libmultiprocess
-git subtree pull --prefix=src/ipc/libmultiprocess libmultiprocess master --squash
-```
+The tool instructions also include a list of the subtrees managed by Quantum Coin Core.
 
 The ultimate upstream of the few externally managed subtrees are:
 
 - src/leveldb
   - Upstream at https://github.com/google/leveldb ; maintained by Google. Open
-    important PRs to the Bitcoin Core subtree to avoid delay.
+    important PRs to the Quantum Coin Core subtree to avoid delay.
   - **Note**: Follow the instructions in [Upgrading LevelDB](#upgrading-leveldb) when
     merging upstream changes to the LevelDB subtree.
 
@@ -1144,7 +1203,8 @@ The ultimate upstream of the few externally managed subtrees are:
   - Used by leveldb for hardware acceleration of CRC32C checksums for data integrity.
   - Upstream at https://github.com/google/crc32c ; maintained by Google.
 
-## Upgrading LevelDB
+Upgrading LevelDB
+---------------------
 
 Extra care must be taken when upgrading LevelDB. This section explains issues
 you must be aware of.
@@ -1153,7 +1213,7 @@ you must be aware of.
 
 In most configurations, we use the default LevelDB value for `max_open_files`,
 which is 1000 at the time of this writing. If LevelDB actually uses this many
-file descriptors, it will cause problems with Bitcoin's `select()` loop, because
+file descriptors, it will cause problems with Quantum Coin's `select()` loop, because
 it may cause new sockets to be created where the fd value is >= 1024. For this
 reason, on 64-bit Unix systems, we rely on an internal LevelDB optimization that
 uses `mmap()` + `close()` to open table files without actually retaining
@@ -1164,12 +1224,12 @@ In addition to reviewing the upstream changes in `env_posix.cc`, you can use `ls
 check this. For example, on Linux this command will show open `.ldb` file counts:
 
 ```bash
-$ lsof -p $(pidof bitcoind) |\
+$ lsof -p $(pidof qtcd) |\
     awk 'BEGIN { fd=0; mem=0; } /ldb$/ { if ($4 == "mem") mem++; else fd++ } END { printf "mem = %s, fd = %s\n", mem, fd}'
 mem = 119, fd = 0
 ```
 
-The `mem` value shows how many files are mmap'ed, and the `fd` value shows how
+The `mem` value shows how many files are mmap'ed, and the `fd` value shows you
 many file descriptors these files are using. You should check that `fd` is a
 small number (usually 0 on 64-bit hosts).
 
@@ -1179,18 +1239,19 @@ details.
 ### Consensus Compatibility
 
 It is possible for LevelDB changes to inadvertently change consensus
-compatibility between nodes. This happened in Bitcoin 0.8 (when LevelDB was
+compatibility between nodes. This happened in Quantum Coin 0.8 (when LevelDB was
 first introduced). When upgrading LevelDB, you should review the upstream changes
 to check for issues affecting consensus compatibility.
 
 For example, if LevelDB had a bug that accidentally prevented a key from being
 returned in an edge case, and that bug was fixed upstream, the bug "fix" would
 be an incompatible consensus change. In this situation, the correct behavior
-would be to revert the upstream fix before applying the updates to Bitcoin's
+would be to revert the upstream fix before applying the updates to Quantum Coin's
 copy of LevelDB. In general, you should be wary of any upstream changes affecting
 what data is returned from LevelDB queries.
 
-## Scripted diffs
+Scripted diffs
+--------------
 
 For reformatting and refactoring commits where the changes can be easily automated using a bash script, we use
 scripted-diff commits. The bash script is included in the commit message and our CI job checks that
@@ -1231,13 +1292,13 @@ introduce accidental changes.
 
 Some good examples of scripted-diff:
 
-- [scripted-diff: Rename InitInterfaces to NodeContext](https://github.com/bitcoin/bitcoin/commit/301bd41a2e6765b185bd55f4c541f9e27aeea29d)
+- [scripted-diff: Rename InitInterfaces to NodeContext](https://github.com/qtc/qtc/commit/301bd41a2e6765b185bd55f4c541f9e27aeea29d)
 uses an elegant script to replace occurrences of multiple terms in all source files.
 
-- [scripted-diff: Remove g_connman, g_banman globals](https://github.com/bitcoin/bitcoin/commit/8922d7f6b751a3e6b3b9f6fb7961c442877fb65a)
+- [scripted-diff: Remove g_connman, g_banman globals](https://github.com/qtc/qtc/commit/8922d7f6b751a3e6b3b9f6fb7961c442877fb65a)
 replaces specific terms in a list of specific source files.
 
-- [scripted-diff: Replace fprintf with tfm::format](https://github.com/bitcoin/bitcoin/commit/fac03ec43a15ad547161e37e53ea82482cc508f9)
+- [scripted-diff: Replace fprintf with tfm::format](https://github.com/qtc/qtc/commit/fac03ec43a15ad547161e37e53ea82482cc508f9)
 does a global replacement but excludes certain directories.
 
 To find all previous uses of scripted diffs in the repository, do:
@@ -1246,7 +1307,8 @@ To find all previous uses of scripted diffs in the repository, do:
 git log --grep="-BEGIN VERIFY SCRIPT-"
 ```
 
-## Release notes
+Release notes
+-------------
 
 Release notes should be written for any PR that:
 
@@ -1259,7 +1321,8 @@ Release notes should be added to a PR-specific release note file at
 `/doc/release-notes-<PR number>.md` to avoid conflicts between multiple PRs.
 All `release-notes*` files are merged into a single `release-notes-<version>.md` file prior to the release.
 
-## RPC interface guidelines
+RPC interface guidelines
+--------------------------
 
 A few guidelines for introducing and reviewing new RPC interfaces:
 
@@ -1301,7 +1364,7 @@ A few guidelines for introducing and reviewing new RPC interfaces:
 - Try not to overload methods on argument type. E.g. don't make `getblock(true)` and `getblock("hash")`
   do different things.
 
-  - *Rationale*: This is impossible to use with `bitcoin-cli`, and can be surprising to users.
+  - *Rationale*: This is impossible to use with `qtc-cli`, and can be surprising to users.
 
   - *Exception*: Some RPC calls can take both an `int` and `bool`, most notably when a bool was switched
     to a multi-value, or due to other historical reasons. **Always** have false map to 0 and
@@ -1315,7 +1378,7 @@ A few guidelines for introducing and reviewing new RPC interfaces:
 
 - Add every non-string RPC argument `(method, idx, name)` to the table `vRPCConvertParams` in `rpc/client.cpp`.
 
-  - *Rationale*: `bitcoin-cli` and the GUI debug console use this table to determine how to
+  - *Rationale*: `qtc-cli` and the GUI debug console use this table to determine how to
     convert a plaintext command line to JSON. If the types don't match, the method can be unusable
     from there.
 
@@ -1336,7 +1399,7 @@ A few guidelines for introducing and reviewing new RPC interfaces:
   RPCs whose behavior does *not* depend on the current chainstate may omit this
   call.
 
-  - *Rationale*: In previous versions of Bitcoin Core, the wallet was always
+  - *Rationale*: In previous versions of Quantum Coin Core, the wallet was always
     in-sync with the chainstate (by virtue of them all being updated in the
     same cs_main lock). In order to maintain the behavior that wallet RPCs
     return results as of at least the highest best-known block an RPC
@@ -1363,11 +1426,12 @@ A few guidelines for introducing and reviewing new RPC interfaces:
 
 A few guidelines for modifying existing RPC interfaces:
 
-- It's preferable to avoid changing an RPC in a backward-incompatible manner, but in that case, add an associated `-deprecatedrpc=` option to retain previous RPC behavior during the deprecation period. Backward-incompatible changes include: data type changes (e.g. from `{"warnings":""}` to `{"warnings":[]}`, changing a value from a string to a number, etc.), logical meaning changes of a value, key name changes (e.g. `{"warning":""}` to `{"warnings":""}`), or removing a key from an object. Adding a key to an object is generally considered backward-compatible. Include a release note that refers the user to the RPC help for details of feature deprecation and re-enabling previous behavior. [Example RPC help](https://github.com/bitcoin/bitcoin/blob/94f0adcc/src/rpc/blockchain.cpp#L1316-L1323).
+- It's preferable to avoid changing an RPC in a backward-incompatible manner, but in that case, add an associated `-deprecatedrpc=` option to retain previous RPC behavior during the deprecation period. Backward-incompatible changes include: data type changes (e.g. from `{"warnings":""}` to `{"warnings":[]}`, changing a value from a string to a number, etc.), logical meaning changes of a value, or key name changes (e.g. `{"warning":""}` to `{"warnings":""}`). Adding a key to an object is generally considered backward-compatible. Include a release note that refers the user to the RPC help for details of feature deprecation and re-enabling previous behavior. [Example RPC help](https://github.com/qtc/qtc/blob/94f0adcc/src/rpc/blockchain.cpp#L1316-L1323).
 
   - *Rationale*: Changes in RPC JSON structure can break downstream application compatibility. Implementation of `deprecatedrpc` provides a grace period for downstream applications to migrate. Release notes provide notification to downstream users.
 
-## Internal interface guidelines
+Internal interface guidelines
+-----------------------------
 
 Internal interfaces between parts of the codebase that are meant to be
 independent (node, wallet, GUI), are defined in
@@ -1476,4 +1540,4 @@ communication:
 
   Note: This last convention isn't generally followed outside of
   [`src/interfaces/`](../src/interfaces/), though it did come up for discussion
-  before in [#14635](https://github.com/bitcoin/bitcoin/pull/14635).
+  before in [#14635](https://github.com/qtc/qtc/pull/14635).

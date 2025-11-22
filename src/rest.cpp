@@ -1,7 +1,9 @@
 // Copyright (c) 2009-2010 Satoshi Nakamoto
-// Copyright (c) 2009-present The Bitcoin Core developers
+// Copyright (c) 2009-2022 The QTC Core developers
 // Distributed under the MIT software license, see the accompanying
 // file COPYING or http://www.opensource.org/licenses/mit-license.php.
+
+#include <qtc-build-config.h> // IWYU pragma: keep
 
 #include <rest.h>
 
@@ -85,7 +87,11 @@ static NodeContext* GetNodeContext(const std::any& context, HTTPRequest* req)
 {
     auto node_context = util::AnyPtr<NodeContext>(context);
     if (!node_context) {
-        RESTERR(req, HTTP_INTERNAL_SERVER_ERROR, STR_INTERNAL_BUG("Node context not found!"));
+        RESTERR(req, HTTP_INTERNAL_SERVER_ERROR,
+                strprintf("%s:%d (%s)\n"
+                          "Internal bug detected: Node context not found!\n"
+                          "You may report this issue here: %s\n",
+                          __FILE__, __LINE__, __func__, CLIENT_BUGREPORT));
         return nullptr;
     }
     return node_context;
@@ -119,7 +125,11 @@ static ChainstateManager* GetChainman(const std::any& context, HTTPRequest* req)
 {
     auto node_context = util::AnyPtr<NodeContext>(context);
     if (!node_context || !node_context->chainman) {
-        RESTERR(req, HTTP_INTERNAL_SERVER_ERROR, STR_INTERNAL_BUG("Chainman disabled or instance not found!"));
+        RESTERR(req, HTTP_INTERNAL_SERVER_ERROR,
+                strprintf("%s:%d (%s)\n"
+                          "Internal bug detected: Chainman disabled or instance not found!\n"
+                          "You may report this issue here: %s\n",
+                          __FILE__, __LINE__, __func__, CLIENT_BUGREPORT));
         return nullptr;
     }
     return node_context->chainman.get();
@@ -134,7 +144,7 @@ RESTResponseFormat ParseDataFormat(std::string& param, const std::string& strReq
 
     // No format string is found
     if (pos_format == std::string::npos) {
-        return RESTResponseFormat::UNDEF;
+        return rf_names[0].rf;
     }
 
     // Match format string to available formats
@@ -147,7 +157,7 @@ RESTResponseFormat ParseDataFormat(std::string& param, const std::string& strReq
     }
 
     // If no suffix is found, return RESTResponseFormat::UNDEF and original string without query string
-    return RESTResponseFormat::UNDEF;
+    return rf_names[0].rf;
 }
 
 static std::string AvailableDataFormatsString()
@@ -177,12 +187,12 @@ static bool CheckWarmup(HTTPRequest* req)
 
 static bool rest_headers(const std::any& context,
                          HTTPRequest* req,
-                         const std::string& uri_part)
+                         const std::string& strURIPart)
 {
     if (!CheckWarmup(req))
         return false;
     std::string param;
-    const RESTResponseFormat rf = ParseDataFormat(param, uri_part);
+    const RESTResponseFormat rf = ParseDataFormat(param, strURIPart);
     std::vector<std::string> path = SplitString(param, '/');
 
     std::string raw_count;
@@ -309,13 +319,13 @@ static void BlockUndoToJSON(const CBlockUndo& block_undo, UniValue& result)
     }
 }
 
-static bool rest_spent_txouts(const std::any& context, HTTPRequest* req, const std::string& uri_part)
+static bool rest_spent_txouts(const std::any& context, HTTPRequest* req, const std::string& strURIPart)
 {
     if (!CheckWarmup(req)) {
         return false;
     }
     std::string param;
-    const RESTResponseFormat rf = ParseDataFormat(param, uri_part);
+    const RESTResponseFormat rf = ParseDataFormat(param, strURIPart);
     std::vector<std::string> path = SplitString(param, '/');
 
     std::string hashStr;
@@ -381,13 +391,13 @@ static bool rest_spent_txouts(const std::any& context, HTTPRequest* req, const s
 
 static bool rest_block(const std::any& context,
                        HTTPRequest* req,
-                       const std::string& uri_part,
+                       const std::string& strURIPart,
                        TxVerbosity tx_verbosity)
 {
     if (!CheckWarmup(req))
         return false;
     std::string hashStr;
-    const RESTResponseFormat rf = ParseDataFormat(hashStr, uri_part);
+    const RESTResponseFormat rf = ParseDataFormat(hashStr, strURIPart);
 
     auto hash{uint256::FromHex(hashStr)};
     if (!hash) {
@@ -452,22 +462,22 @@ static bool rest_block(const std::any& context,
     }
 }
 
-static bool rest_block_extended(const std::any& context, HTTPRequest* req, const std::string& uri_part)
+static bool rest_block_extended(const std::any& context, HTTPRequest* req, const std::string& strURIPart)
 {
-    return rest_block(context, req, uri_part, TxVerbosity::SHOW_DETAILS_AND_PREVOUT);
+    return rest_block(context, req, strURIPart, TxVerbosity::SHOW_DETAILS_AND_PREVOUT);
 }
 
-static bool rest_block_notxdetails(const std::any& context, HTTPRequest* req, const std::string& uri_part)
+static bool rest_block_notxdetails(const std::any& context, HTTPRequest* req, const std::string& strURIPart)
 {
-    return rest_block(context, req, uri_part, TxVerbosity::SHOW_TXID);
+    return rest_block(context, req, strURIPart, TxVerbosity::SHOW_TXID);
 }
 
-static bool rest_filter_header(const std::any& context, HTTPRequest* req, const std::string& uri_part)
+static bool rest_filter_header(const std::any& context, HTTPRequest* req, const std::string& strURIPart)
 {
     if (!CheckWarmup(req)) return false;
 
     std::string param;
-    const RESTResponseFormat rf = ParseDataFormat(param, uri_part);
+    const RESTResponseFormat rf = ParseDataFormat(param, strURIPart);
 
     std::vector<std::string> uri_parts = SplitString(param, '/');
     std::string raw_count;
@@ -584,12 +594,12 @@ static bool rest_filter_header(const std::any& context, HTTPRequest* req, const 
     }
 }
 
-static bool rest_block_filter(const std::any& context, HTTPRequest* req, const std::string& uri_part)
+static bool rest_block_filter(const std::any& context, HTTPRequest* req, const std::string& strURIPart)
 {
     if (!CheckWarmup(req)) return false;
 
     std::string param;
-    const RESTResponseFormat rf = ParseDataFormat(param, uri_part);
+    const RESTResponseFormat rf = ParseDataFormat(param, strURIPart);
 
     // request is sent over URI scheme /rest/blockfilter/filtertype/blockhash
     std::vector<std::string> uri_parts = SplitString(param, '/');
@@ -678,12 +688,12 @@ static bool rest_block_filter(const std::any& context, HTTPRequest* req, const s
 // A bit of a hack - dependency on a function defined in rpc/blockchain.cpp
 RPCHelpMan getblockchaininfo();
 
-static bool rest_chaininfo(const std::any& context, HTTPRequest* req, const std::string& uri_part)
+static bool rest_chaininfo(const std::any& context, HTTPRequest* req, const std::string& strURIPart)
 {
     if (!CheckWarmup(req))
         return false;
     std::string param;
-    const RESTResponseFormat rf = ParseDataFormat(param, uri_part);
+    const RESTResponseFormat rf = ParseDataFormat(param, strURIPart);
 
     switch (rf) {
     case RESTResponseFormat::JSON: {
@@ -800,14 +810,14 @@ static bool rest_mempool(const std::any& context, HTTPRequest* req, const std::s
     }
 }
 
-static bool rest_tx(const std::any& context, HTTPRequest* req, const std::string& uri_part)
+static bool rest_tx(const std::any& context, HTTPRequest* req, const std::string& strURIPart)
 {
     if (!CheckWarmup(req))
         return false;
     std::string hashStr;
-    const RESTResponseFormat rf = ParseDataFormat(hashStr, uri_part);
+    const RESTResponseFormat rf = ParseDataFormat(hashStr, strURIPart);
 
-    auto hash{Txid::FromHex(hashStr)};
+    auto hash{uint256::FromHex(hashStr)};
     if (!hash) {
         return RESTERR(req, HTTP_BAD_REQUEST, "Invalid hash: " + hashStr);
     }
@@ -819,7 +829,7 @@ static bool rest_tx(const std::any& context, HTTPRequest* req, const std::string
     const NodeContext* const node = GetNodeContext(context, req);
     if (!node) return false;
     uint256 hashBlock = uint256();
-    const CTransactionRef tx{GetTransaction(/*block_index=*/nullptr, node->mempool.get(), *hash,  node->chainman->m_blockman, hashBlock)};
+    const CTransactionRef tx{GetTransaction(/*block_index=*/nullptr, node->mempool.get(), *hash, hashBlock, node->chainman->m_blockman)};
     if (!tx) {
         return RESTERR(req, HTTP_NOT_FOUND, hashStr + " not found");
     }
@@ -859,12 +869,12 @@ static bool rest_tx(const std::any& context, HTTPRequest* req, const std::string
     }
 }
 
-static bool rest_getutxos(const std::any& context, HTTPRequest* req, const std::string& uri_part)
+static bool rest_getutxos(const std::any& context, HTTPRequest* req, const std::string& strURIPart)
 {
     if (!CheckWarmup(req))
         return false;
     std::string param;
-    const RESTResponseFormat rf = ParseDataFormat(param, uri_part);
+    const RESTResponseFormat rf = ParseDataFormat(param, strURIPart);
 
     std::vector<std::string> uriParts;
     if (param.length() > 1)

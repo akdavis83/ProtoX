@@ -1,14 +1,14 @@
 // Copyright (c) 2009-2010 Satoshi Nakamoto
-// Copyright (c) 2009-present The Bitcoin Core developers
+// Copyright (c) 2009-present The QTC Core developers
 // Distributed under the MIT software license, see the accompanying
 // file COPYING or http://www.opensource.org/licenses/mit-license.php.
 
-#ifndef BITCOIN_WALLET_WALLETDB_H
-#define BITCOIN_WALLET_WALLETDB_H
+#ifndef QTC_WALLET_WALLETDB_H
+#define QTC_WALLET_WALLETDB_H
 
 #include <key.h>
-#include <primitives/transaction_identifier.h>
 #include <script/sign.h>
+#include <util/transaction_identifier.h>
 #include <wallet/db.h>
 #include <wallet/walletutil.h>
 
@@ -26,9 +26,6 @@ class CMasterKey;
 class CWallet;
 class CWalletTx;
 struct WalletContext;
-
-// Logs information about the database, including available engines, features, and other capabilities
-void LogDBInfo();
 
 /**
  * Overview of wallet database classes:
@@ -244,6 +241,8 @@ public:
 
     bool WriteOrderPosNext(int64_t nOrderPosNext);
 
+    bool WriteMinVersion(int nVersion);
+
     bool WriteDescriptorKey(const uint256& desc_id, const CPubKey& pubkey, const CPrivKey& privkey);
     bool WriteCryptedDescriptorKey(const uint256& desc_id, const CPubKey& pubkey, const std::vector<unsigned char>& secret);
     bool WriteDescriptor(const uint256& desc_id, const WalletDescriptor& descriptor);
@@ -312,4 +311,4 @@ bool HasLegacyRecords(CWallet& wallet);
 bool HasLegacyRecords(CWallet& wallet, DatabaseBatch& batch);
 } // namespace wallet
 
-#endif // BITCOIN_WALLET_WALLETDB_H
+#endif // QTC_WALLET_WALLETDB_H

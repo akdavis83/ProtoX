@@ -1,10 +1,10 @@
 // Copyright (c) 2009-2010 Satoshi Nakamoto
-// Copyright (c) 2009-present The Bitcoin Core developers
+// Copyright (c) 2009-present The QTC Core developers
 // Distributed under the MIT software license, see the accompanying
 // file COPYING or http://www.opensource.org/licenses/mit-license.php.
 
-#ifndef BITCOIN_SERIALIZE_H
-#define BITCOIN_SERIALIZE_H
+#ifndef QTC_SERIALIZE_H
+#define QTC_SERIALIZE_H
 
 #include <attributes.h>
 #include <compat/assumptions.h> // IWYU pragma: keep
@@ -60,6 +60,11 @@ template<typename Stream> inline void ser_writedata16(Stream &s, uint16_t obj)
     obj = htole16_internal(obj);
     s.write(std::as_bytes(std::span{&obj, 1}));
 }
+template<typename Stream> inline void ser_writedata16be(Stream &s, uint16_t obj)
+{
+    obj = htobe16_internal(obj);
+    s.write(std::as_bytes(std::span{&obj, 1}));
+}
 template<typename Stream> inline void ser_writedata32(Stream &s, uint32_t obj)
 {
     obj = htole32_internal(obj);
@@ -86,6 +91,12 @@ template<typename Stream> inline uint16_t ser_readdata16(Stream &s)
     uint16_t obj;
     s.read(std::as_writable_bytes(std::span{&obj, 1}));
     return le16toh_internal(obj);
+}
+template<typename Stream> inline uint16_t ser_readdata16be(Stream &s)
+{
+    uint16_t obj;
+    s.read(std::as_writable_bytes(std::span{&obj, 1}));
+    return be16toh_internal(obj);
 }
 template<typename Stream> inline uint32_t ser_readdata32(Stream &s)
 {
@@ -1051,32 +1062,31 @@ struct ActionUnserialize {
 class SizeComputer
 {
 protected:
-    uint64_t m_size{0};
+    size_t nSize{0};
 
 public:
     SizeComputer() = default;
 
     void write(std::span<const std::byte> src)
     {
-        m_size += src.size();
+        this->nSize += src.size();
     }
 
-    /** Pretend this many bytes are written, without specifying them. */
-    void seek(uint64_t num)
+    /** Pretend _nSize bytes are written, without specifying them. */
+    void seek(size_t _nSize)
     {
-        m_size += num;
+        this->nSize += _nSize;
     }
 
-    template <typename T>
+    template<typename T>
     SizeComputer& operator<<(const T& obj)
     {
         ::Serialize(*this, obj);
-        return *this;
+        return (*this);
     }
 
-    uint64_t size() const
-    {
-        return m_size;
+    size_t size() const {
+        return nSize;
     }
 };
 
@@ -1092,7 +1102,7 @@ inline void WriteCompactSize(SizeComputer &s, uint64_t nSize)
 }
 
 template <typename T>
-uint64_t GetSerializeSize(const T& t)
+size_t GetSerializeSize(const T& t)
 {
     return (SizeComputer() << t).size();
 }
@@ -1221,4 +1231,4 @@ public:
         return ParamsWrapper{*this, t};                                                  \
     }
 
-#endif // BITCOIN_SERIALIZE_H
+#endif // QTC_SERIALIZE_H

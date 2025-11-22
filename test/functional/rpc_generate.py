@@ -1,12 +1,12 @@
 #!/usr/bin/env python3
-# Copyright (c) 2020-present The Bitcoin Core developers
+# Copyright (c) 2020-present The Quantum Coin Core developers
 # Distributed under the MIT software license, see the accompanying
 # file COPYING or http://www.opensource.org/licenses/mit-license.php.
 """Test generate* RPCs."""
 
 from concurrent.futures import ThreadPoolExecutor
 
-from test_framework.test_framework import BitcoinTestFramework
+from test_framework.test_framework import Quantum CoinTestFramework
 from test_framework.wallet import MiniWallet
 from test_framework.util import (
     assert_equal,
@@ -14,7 +14,7 @@ from test_framework.util import (
 )
 
 
-class RPCGenerateTest(BitcoinTestFramework):
+class RPCGenerateTest(Quantum CoinTestFramework):
     def set_test_params(self):
         self.num_nodes = 1
 
@@ -124,12 +124,11 @@ class RPCGenerateTest(BitcoinTestFramework):
             "cli option. Refer to -help for more information.\n"
         )
 
-        if not self.options.usecli:
-            self.log.info("Test rpc generate raises with message to use cli option")
-            assert_raises_rpc_error(-32601, message, self.nodes[0]._rpc.generate)
+        self.log.info("Test rpc generate raises with message to use cli option")
+        assert_raises_rpc_error(-32601, message, self.nodes[0].rpc.generate)
 
-            self.log.info("Test rpc generate help prints message to use cli option")
-            assert_equal(message, self.nodes[0].help("generate"))
+        self.log.info("Test rpc generate help prints message to use cli option")
+        assert_equal(message, self.nodes[0].help("generate"))
 
         self.log.info("Test rpc generate is a hidden command not discoverable in general help")
         assert message not in self.nodes[0].help()

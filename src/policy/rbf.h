@@ -1,9 +1,9 @@
-// Copyright (c) 2016-2022 The Bitcoin Core developers
+// Copyright (c) 2016-2022 The QTC Core developers
 // Distributed under the MIT software license, see the accompanying
 // file COPYING or http://www.opensource.org/licenses/mit-license.php.
 
-#ifndef BITCOIN_POLICY_RBF_H
-#define BITCOIN_POLICY_RBF_H
+#ifndef QTC_POLICY_RBF_H
+#define QTC_POLICY_RBF_H
 
 #include <consensus/amount.h>
 #include <primitives/transaction.h>
@@ -90,7 +90,7 @@ std::optional<std::string> HasNoNewUnconfirmed(const CTransaction& tx, const CTx
  */
 std::optional<std::string> EntriesAndTxidsDisjoint(const CTxMemPool::setEntries& ancestors,
                                                    const std::set<Txid>& direct_conflicts,
-                                                   const Txid& txid);
+                                                   const uint256& txid);
 
 /** Check that the feerate of the replacement transaction(s) is higher than the feerate of each
  * of the transactions in iters_conflicting.
@@ -98,7 +98,7 @@ std::optional<std::string> EntriesAndTxidsDisjoint(const CTxMemPool::setEntries&
  * @returns error message if fees insufficient, otherwise std::nullopt.
  */
 std::optional<std::string> PaysMoreThanConflicts(const CTxMemPool::setEntries& iters_conflicting,
-                                                 CFeeRate replacement_feerate, const Txid& txid);
+                                                 CFeeRate replacement_feerate, const uint256& txid);
 
 /** The replacement transaction must pay more fees than the original transactions. The additional
  * fees must pay for the replacement's bandwidth at or above the incremental relay feerate.
@@ -113,7 +113,7 @@ std::optional<std::string> PaysForRBF(CAmount original_fees,
                                       CAmount replacement_fees,
                                       size_t replacement_vsize,
                                       CFeeRate relay_fee,
-                                      const Txid& txid);
+                                      const uint256& txid);
 
 /**
  * The replacement transaction must improve the feerate diagram of the mempool.
@@ -122,4 +122,4 @@ std::optional<std::string> PaysForRBF(CAmount original_fees,
  */
 std::optional<std::pair<DiagramCheckError, std::string>> ImprovesFeerateDiagram(CTxMemPool::ChangeSet& changeset);
 
-#endif // BITCOIN_POLICY_RBF_H
+#endif // QTC_POLICY_RBF_H

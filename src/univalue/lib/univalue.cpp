@@ -1,5 +1,5 @@
 // Copyright 2014 BitPay Inc.
-// Copyright 2015 Bitcoin Core Developers
+// Copyright 2015 QTC Core Developers
 // Distributed under the MIT software license, see the accompanying
 // file COPYING or https://opensource.org/licenses/mit-license.php.
 
@@ -240,10 +240,3 @@ const UniValue& UniValue::find_value(std::string_view key) const
     return NullUniValue;
 }
 
-void UniValue::reserve(size_t new_cap)
-{
-    values.reserve(new_cap);
-    if (typ == VOBJ) {
-        keys.reserve(new_cap);
-    }
-}

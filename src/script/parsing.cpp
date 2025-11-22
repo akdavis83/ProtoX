@@ -1,4 +1,4 @@
-// Copyright (c) 2018-present The Bitcoin Core developers
+// Copyright (c) 2018-present The QTC Core developers
 // Distributed under the MIT software license, see the accompanying
 // file COPYING or http://www.opensource.org/licenses/mit-license.php.
 
@@ -12,10 +12,10 @@
 
 namespace script {
 
-bool Const(const std::string& str, std::span<const char>& sp, bool skip)
+bool Const(const std::string& str, std::span<const char>& sp)
 {
     if ((size_t)sp.size() >= str.size() && std::equal(str.begin(), str.end(), sp.begin())) {
-        if (skip) sp = sp.subspan(str.size());
+        sp = sp.subspan(str.size());
         return true;
     }
     return false;

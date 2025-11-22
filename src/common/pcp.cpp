@@ -1,4 +1,4 @@
-// Copyright (c) 2024-present The Bitcoin Core developers
+// Copyright (c) 2024-present The QTC Core developers
 // Distributed under the MIT software license, see the accompanying
 // file COPYING or https://www.opensource.org/licenses/mit-license.php.
 
@@ -15,7 +15,6 @@
 #include <util/readwritefile.h>
 #include <util/sock.h>
 #include <util/strencodings.h>
-#include <util/threadinterrupt.h>
 
 namespace {
 
@@ -218,8 +217,7 @@ CNetAddr PCPUnwrapAddress(std::span<const uint8_t> wrapped_addr)
 //! PCP or NAT-PMP send-receive loop.
 std::optional<std::vector<uint8_t>> PCPSendRecv(Sock &sock, const std::string &protocol, std::span<const uint8_t> request, int num_tries,
         std::chrono::milliseconds timeout_per_try,
-        std::function<bool(std::span<const uint8_t>)> check_packet,
-        CThreadInterrupt& interrupt)
+        std::function<bool(std::span<const uint8_t>)> check_packet)
 {
     using namespace std::chrono;
     // UDP is a potentially lossy protocol, so we try to send again a few times.
@@ -232,7 +230,7 @@ std::optional<std::vector<uint8_t>> PCPSendRecv(Sock &sock, const std::string &p
         }
         // Dispatch packet to gateway.
         if (sock.Send(request.data(), request.size(), 0) != static_cast<ssize_t>(request.size())) {
-            LogPrintLevel(BCLog::NET, BCLog::Level::Debug, "%s: Could not send request: %s\n", protocol, NetworkErrorString(WSAGetLastError()));
+            LogPrintLevel(BCLog::NET, BCLog::Level::Warning, "%s: Could not send request: %s\n", protocol, NetworkErrorString(WSAGetLastError()));
             return std::nullopt; // Network-level error, probably no use retrying.
         }
 
@@ -240,7 +238,6 @@ std::optional<std::vector<uint8_t>> PCPSendRecv(Sock &sock, const std::string &p
         auto cur_time = time_point_cast<milliseconds>(MockableSteadyClock::now());
         auto deadline = cur_time + timeout_per_try;
         while ((cur_time = time_point_cast<milliseconds>(MockableSteadyClock::now())) < deadline) {
-            if (interrupt) return std::nullopt;
             Sock::Event occurred = 0;
             if (!sock.Wait(deadline - cur_time, Sock::RECV, &occurred)) {
                 LogPrintLevel(BCLog::NET, BCLog::Level::Warning, "%s: Could not wait on socket: %s\n", protocol, NetworkErrorString(WSAGetLastError()));
@@ -254,7 +251,7 @@ std::optional<std::vector<uint8_t>> PCPSendRecv(Sock &sock, const std::string &p
             // Receive response.
             recvsz = sock.Recv(response, sizeof(response), MSG_DONTWAIT);
             if (recvsz < 0) {
-                LogPrintLevel(BCLog::NET, BCLog::Level::Debug, "%s: Could not receive response: %s\n", protocol, NetworkErrorString(WSAGetLastError()));
+                LogPrintLevel(BCLog::NET, BCLog::Level::Warning, "%s: Could not receive response: %s\n", protocol, NetworkErrorString(WSAGetLastError()));
                 return std::nullopt; // Network-level error, probably no use retrying.
             }
             LogPrintLevel(BCLog::NET, BCLog::Level::Debug, "%s: Received response of %d bytes: %s\n", protocol, recvsz, HexStr(std::span(response, recvsz)));
@@ -274,7 +271,7 @@ std::optional<std::vector<uint8_t>> PCPSendRecv(Sock &sock, const std::string &p
 
 }
 
-std::variant<MappingResult, MappingError> NATPMPRequestPortMap(const CNetAddr &gateway, uint16_t port, uint32_t lifetime, CThreadInterrupt& interrupt, int num_tries, std::chrono::milliseconds timeout_per_try)
+std::variant<MappingResult, MappingError> NATPMPRequestPortMap(const CNetAddr &gateway, uint16_t port, uint32_t lifetime, int num_tries, std::chrono::milliseconds timeout_per_try)
 {
     struct sockaddr_storage dest_addr;
     socklen_t dest_addrlen = sizeof(struct sockaddr_storage);
@@ -322,8 +319,7 @@ std::variant<MappingResult, MappingError> NATPMPRequestPortMap(const CNetAddr &g
                 return false; // Wasn't response to what we expected, try receiving next packet.
             }
             return true;
-        },
-        interrupt);
+        });
 
     struct in_addr external_addr;
     if (recv_res) {
@@ -365,8 +361,7 @@ std::variant<MappingResult, MappingError> NATPMPRequestPortMap(const CNetAddr &g
                 return false; // Wasn't response to what we expected, try receiving next packet.
             }
             return true;
-        },
-        interrupt);
+        });
 
     if (recv_res) {
         const std::span<uint8_t> response = *recv_res;
@@ -389,7 +384,7 @@ std::variant<MappingResult, MappingError> NATPMPRequestPortMap(const CNetAddr &g
     }
 }
 
-std::variant<MappingResult, MappingError> PCPRequestPortMap(const PCPMappingNonce &nonce, const CNetAddr &gateway, const CNetAddr &bind, uint16_t port, uint32_t lifetime, CThreadInterrupt& interrupt, int num_tries, std::chrono::milliseconds timeout_per_try)
+std::variant<MappingResult, MappingError> PCPRequestPortMap(const PCPMappingNonce &nonce, const CNetAddr &gateway, const CNetAddr &bind, uint16_t port, uint32_t lifetime, int num_tries, std::chrono::milliseconds timeout_per_try)
 {
     struct sockaddr_storage dest_addr, bind_addr;
     socklen_t dest_addrlen = sizeof(struct sockaddr_storage), bind_addrlen = sizeof(struct sockaddr_storage);
@@ -489,8 +484,7 @@ std::variant<MappingResult, MappingError> PCPRequestPortMap(const PCPMappingNonc
                 return false; // Wasn't response to what we expected, try receiving next packet.
             }
             return true;
-        },
-        interrupt);
+        });
 
     if (!recv_res) {
         return MappingError::NETWORK_ERROR;

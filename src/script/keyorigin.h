@@ -1,9 +1,9 @@
-// Copyright (c) 2019-2020 The Bitcoin Core developers
+// Copyright (c) 2019-2020 The QTC Core developers
 // Distributed under the MIT software license, see the accompanying
 // file COPYING or http://www.opensource.org/licenses/mit-license.php.
 
-#ifndef BITCOIN_SCRIPT_KEYORIGIN_H
-#define BITCOIN_SCRIPT_KEYORIGIN_H
+#ifndef QTC_SCRIPT_KEYORIGIN_H
+#define QTC_SCRIPT_KEYORIGIN_H
 
 #include <serialize.h>
 #include <vector>
@@ -46,4 +46,4 @@ struct KeyOriginInfo
     }
 };
 
-#endif // BITCOIN_SCRIPT_KEYORIGIN_H
+#endif // QTC_SCRIPT_KEYORIGIN_H

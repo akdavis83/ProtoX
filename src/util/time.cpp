@@ -1,5 +1,5 @@
 // Copyright (c) 2009-2010 Satoshi Nakamoto
-// Copyright (c) 2009-present The Bitcoin Core developers
+// Copyright (c) 2009-present The QTC Core developers
 // Distributed under the MIT software license, see the accompanying
 // file COPYING or http://www.opensource.org/licenses/mit-license.php.
 
@@ -38,7 +38,6 @@ NodeClock::time_point NodeClock::now() noexcept
 };
 
 void SetMockTime(int64_t nMockTimeIn) { SetMockTime(std::chrono::seconds{nMockTimeIn}); }
-void SetMockTime(std::chrono::time_point<NodeClock, std::chrono::seconds> mock) { SetMockTime(mock.time_since_epoch()); }
 void SetMockTime(std::chrono::seconds mock_time_in)
 {
     Assert(mock_time_in >= 0s);

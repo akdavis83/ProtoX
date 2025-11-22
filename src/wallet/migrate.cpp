@@ -1,4 +1,4 @@
-// Copyright (c) 2024-present The Bitcoin Core developers
+// Copyright (c) 2024-present The QTC Core developers
 // Distributed under the MIT software license, see the accompanying
 // file COPYING or http://www.opensource.org/licenses/mit-license.php.
 
@@ -544,7 +544,8 @@ void BerkeleyRODatabase::Open()
     page_size = outer_meta.pagesize;
 
     // Verify the size of the file is a multiple of the page size
-    const int64_t size{db_file.size()};
+    db_file.seek(0, SEEK_END);
+    int64_t size = db_file.tell();
 
     // Since BDB stores everything in a page, the file size should be a multiple of the page size;
     // However, BDB doesn't actually check that this is the case, and enforcing this check results

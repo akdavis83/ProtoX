@@ -1,9 +1,9 @@
-// Copyright (c) 2017-present The Bitcoin Core developers
+// Copyright (c) 2017-present The QTC Core developers
 // Distributed under the MIT software license, see the accompanying
 // file COPYING or http://www.opensource.org/licenses/mit-license.php.
 
-#ifndef BITCOIN_RPC_UTIL_H
-#define BITCOIN_RPC_UTIL_H
+#ifndef QTC_RPC_UTIL_H
+#define QTC_RPC_UTIL_H
 
 #include <addresstype.h>
 #include <consensus/amount.h>
@@ -67,10 +67,6 @@ class FillableSigningProvider;
 class CScript;
 struct Sections;
 
-struct HelpResult : std::runtime_error {
-    explicit HelpResult(const std::string& msg) : std::runtime_error{msg} {}
-};
-
 /**
  * Gets all existing output types formatted for RPC help sections.
  *
@@ -124,8 +120,8 @@ int ParseVerbosity(const UniValue& arg, int default_verbosity, bool allow_bool);
  */
 CAmount AmountFromValue(const UniValue& value, int decimals = 8);
 /**
- * Parse a json number or string, denoting BTC/kvB, into a CFeeRate (sat/kvB).
- * Reject negative values or rates larger than 1BTC/kvB.
+ * Parse a json number or string, denoting QTC/kvB, into a CFeeRate (sat/kvB).
+ * Reject negative values or rates larger than 1QTC/kvB.
  */
 CFeeRate ParseFeeRate(const UniValue& json);
 
@@ -445,8 +441,8 @@ public:
     {
         auto i{GetParamIndex(key)};
         // Return argument (required or with default value).
-        if constexpr (std::is_trivially_copyable_v<R>) {
-            // Return trivially copyable types by value.
+        if constexpr (std::is_integral_v<R> || std::is_floating_point_v<R>) {
+            // Return numbers by value.
             return ArgValue<R>(i);
         } else {
             // Return everything else by reference.
@@ -466,7 +462,7 @@ public:
      *
      * The instantiation of this helper for type R must match the corresponding RPCArg::Type.
      *
-     * @return For trivially copyable types, a std::optional<R> is returned.
+     * @return For integral and floating-point types, a std::optional<R> is returned.
      *         For other types, a R* pointer to the argument is returned. If the
      *         argument is not provided, std::nullopt or a null pointer is returned.
      *
@@ -477,8 +473,8 @@ public:
     {
         auto i{GetParamIndex(key)};
         // Return optional argument (without default).
-        if constexpr (std::is_trivially_copyable_v<R>) {
-            // Return trivially copyable types by value, wrapped in optional.
+        if constexpr (std::is_integral_v<R> || std::is_floating_point_v<R>) {
+            // Return numbers by value, wrapped in optional.
             return ArgValue<std::optional<R>>(i);
         } else {
             // Return other types by pointer.
@@ -529,4 +525,4 @@ std::vector<RPCResult> ScriptPubKeyDoc();
  */
 uint256 GetTarget(const CBlockIndex& blockindex, const uint256 pow_limit);
 
-#endif // BITCOIN_RPC_UTIL_H
+#endif // QTC_RPC_UTIL_H

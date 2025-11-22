@@ -1,20 +1,11 @@
-// Copyright (c) 2017-2022 The Bitcoin Core developers
+// Copyright (c) 2017-2022 The QTC Core developers
 // Distributed under the MIT software license, see the accompanying
 // file COPYING or http://www.opensource.org/licenses/mit-license.php.
 
-#ifndef BITCOIN_INDEX_TXINDEX_H
-#define BITCOIN_INDEX_TXINDEX_H
+#ifndef QTC_INDEX_TXINDEX_H
+#define QTC_INDEX_TXINDEX_H
 
 #include <index/base.h>
-#include <primitives/transaction.h>
-
-#include <cstddef>
-#include <memory>
-
-class uint256;
-namespace interfaces {
-class Chain;
-}
 
 static constexpr bool DEFAULT_TXINDEX{false};
 
@@ -51,10 +42,10 @@ public:
     /// @param[out]  block_hash  The hash of the block the transaction is found in.
     /// @param[out]  tx  The transaction itself.
     /// @return  true if transaction is found, false otherwise
-    bool FindTx(const Txid& tx_hash, uint256& block_hash, CTransactionRef& tx) const;
+    bool FindTx(const uint256& tx_hash, uint256& block_hash, CTransactionRef& tx) const;
 };
 
 /// The global transaction index, used in GetTransaction. May be null.
 extern std::unique_ptr<TxIndex> g_txindex;
 
-#endif // BITCOIN_INDEX_TXINDEX_H
+#endif // QTC_INDEX_TXINDEX_H

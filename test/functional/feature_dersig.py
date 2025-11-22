@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-# Copyright (c) 2015-2022 The Bitcoin Core developers
+# Copyright (c) 2015-2022 The Quantum Coin Core developers
 # Distributed under the MIT software license, see the accompanying
 # file COPYING or http://www.opensource.org/licenses/mit-license.php.
 """Test BIP66 (DER SIG).
@@ -14,7 +14,7 @@ from test_framework.blocktools import (
 from test_framework.messages import msg_block
 from test_framework.p2p import P2PInterface
 from test_framework.script import CScript
-from test_framework.test_framework import BitcoinTestFramework
+from test_framework.test_framework import Quantum CoinTestFramework
 from test_framework.util import (
     assert_equal,
 )
@@ -44,7 +44,7 @@ def unDERify(tx):
 DERSIG_HEIGHT = 102
 
 
-class BIP66Test(BitcoinTestFramework):
+class BIP66Test(Quantum CoinTestFramework):
     def set_test_params(self):
         self.num_nodes = 1
         # whitelist peers to speed up tx relay / mempool sync
@@ -92,15 +92,15 @@ class BIP66Test(BitcoinTestFramework):
         peer.send_and_ping(msg_block(block))
         assert_equal(self.nodes[0].getblockcount(), DERSIG_HEIGHT - 1)
         self.test_dersig_info(is_active=True)  # Not active as of current tip, but next block must obey rules
-        assert_equal(self.nodes[0].getbestblockhash(), block.hash_hex)
+        assert_equal(self.nodes[0].getbestblockhash(), block.hash)
 
         self.log.info("Test that blocks must now be at least version 3")
-        tip = block.hash_int
+        tip = block.sha256
         block_time += 1
         block = create_block(tip, create_coinbase(DERSIG_HEIGHT), block_time, version=2)
         block.solve()
 
-        with self.nodes[0].assert_debug_log(expected_msgs=[f'{block.hash_hex}, bad-version(0x00000002)']):
+        with self.nodes[0].assert_debug_log(expected_msgs=[f'{block.hash}, bad-version(0x00000002)']):
             peer.send_and_ping(msg_block(block))
             assert_equal(int(self.nodes[0].getbestblockhash(), 16), tip)
             peer.sync_with_ping()
@@ -121,8 +121,8 @@ class BIP66Test(BitcoinTestFramework):
                 'txid': spendtx_txid,
                 'wtxid': spendtx_wtxid,
                 'allowed': False,
-                'reject-reason': 'mempool-script-verify-flag-failed (Non-canonical DER signature)',
-                'reject-details': 'mempool-script-verify-flag-failed (Non-canonical DER signature), ' +
+                'reject-reason': 'mandatory-script-verify-flag-failed (Non-canonical DER signature)',
+                'reject-details': 'mandatory-script-verify-flag-failed (Non-canonical DER signature), ' +
                                   f"input 0 of {spendtx_txid} (wtxid {spendtx_wtxid}), spending {coin_txid}:0"
             }],
             self.nodes[0].testmempoolaccept(rawtxs=[spendtx.serialize().hex()], maxfeerate=0),
@@ -133,7 +133,7 @@ class BIP66Test(BitcoinTestFramework):
         block.hashMerkleRoot = block.calc_merkle_root()
         block.solve()
 
-        with self.nodes[0].assert_debug_log(expected_msgs=['Block validation error: block-script-verify-flag-failed (Non-canonical DER signature)']):
+        with self.nodes[0].assert_debug_log(expected_msgs=['Block validation error: mandatory-script-verify-flag-failed (Non-canonical DER signature)']):
             peer.send_and_ping(msg_block(block))
             assert_equal(int(self.nodes[0].getbestblockhash(), 16), tip)
             peer.sync_with_ping()
@@ -146,7 +146,7 @@ class BIP66Test(BitcoinTestFramework):
         self.test_dersig_info(is_active=True)  # Not active as of current tip, but next block must obey rules
         peer.send_and_ping(msg_block(block))
         self.test_dersig_info(is_active=True)  # Active as of current tip
-        assert_equal(self.nodes[0].getbestblockhash(), block.hash_hex)
+        assert_equal(int(self.nodes[0].getbestblockhash(), 16), block.sha256)
 
 
 if __name__ == '__main__':

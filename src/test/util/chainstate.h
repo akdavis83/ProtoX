@@ -1,9 +1,9 @@
-// Copyright (c) 2021-2022 The Bitcoin Core developers
+// Copyright (c) 2021-2022 The QTC Core developers
 // Distributed under the MIT software license, see the accompanying
 // file COPYING or http://www.opensource.org/licenses/mit-license.php.
 //
-#ifndef BITCOIN_TEST_UTIL_CHAINSTATE_H
-#define BITCOIN_TEST_UTIL_CHAINSTATE_H
+#ifndef QTC_TEST_UTIL_CHAINSTATE_H
+#define QTC_TEST_UTIL_CHAINSTATE_H
 
 #include <clientversion.h>
 #include <logging.h>
@@ -47,13 +47,10 @@ CreateAndActivateUTXOSnapshot(
     FILE* outfile{fsbridge::fopen(snapshot_path, "wb")};
     AutoFile auto_outfile{outfile};
 
-    UniValue result = CreateUTXOSnapshot(node,
-                                         node.chainman->ActiveChainstate(),
-                                         std::move(auto_outfile), // Will close auto_outfile.
-                                         snapshot_path,
-                                         snapshot_path);
-    LogInfo("Wrote UTXO snapshot to %s: %s",
-            fs::PathToString(snapshot_path.make_preferred()), result.write());
+    UniValue result = CreateUTXOSnapshot(
+        node, node.chainman->ActiveChainstate(), auto_outfile, snapshot_path, snapshot_path);
+    LogPrintf(
+        "Wrote UTXO snapshot to %s: %s\n", fs::PathToString(snapshot_path.make_preferred()), result.write());
 
     // Read the written snapshot in and then activate it.
     //
@@ -135,4 +132,4 @@ CreateAndActivateUTXOSnapshot(
 }
 
 
-#endif // BITCOIN_TEST_UTIL_CHAINSTATE_H
+#endif // QTC_TEST_UTIL_CHAINSTATE_H

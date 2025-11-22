@@ -1,9 +1,9 @@
-// Copyright (c) 2021 The Bitcoin Core developers
+// Copyright (c) 2021 The QTC Core developers
 // Distributed under the MIT software license, see the accompanying
 // file COPYING or http://www.opensource.org/licenses/mit-license.php.
 
-#ifndef BITCOIN_INTERFACES_IPC_H
-#define BITCOIN_INTERFACES_IPC_H
+#ifndef QTC_INTERFACES_IPC_H
+#define QTC_INTERFACES_IPC_H
 
 #include <functional>
 #include <memory>
@@ -59,19 +59,16 @@ public:
     //! true. If this is not a spawned child process, return false.
     virtual bool startSpawnedProcess(int argc, char* argv[], int& exit_status) = 0;
 
-    //! Connect to a socket address and return a pointer to its Init interface.
-    //! Returns a non-null pointer if the connection was established, returns
-    //! null if address is empty ("") or disabled ("0") or if a connection was
-    //! refused but not required ("auto"), and throws an exception if there was
-    //! an unexpected error.
+    //! Connect to a socket address and make a client interface proxy object
+    //! using provided callback. connectAddress returns an interface pointer if
+    //! the connection was established, returns null if address is empty ("") or
+    //! disabled ("0") or if a connection was refused but not required ("auto"),
+    //! and throws an exception if there was an unexpected error.
     virtual std::unique_ptr<Init> connectAddress(std::string& address) = 0;
 
-    //! Listen on a socket address exposing this process's init interface to
-    //! clients. Throws an exception if there was an error.
+    //! Connect to a socket address and make a client interface proxy object
+    //! using provided callback. Throws an exception if there was an error.
     virtual void listenAddress(std::string& address) = 0;
-
-    //! Disconnect any incoming connections that are still connected.
-    virtual void disconnectIncoming() = 0;
 
     //! Add cleanup callback to remote interface that will run when the
     //! interface is deleted.
@@ -94,4 +91,4 @@ protected:
 std::unique_ptr<Ipc> MakeIpc(const char* exe_name, const char* process_argv0, Init& init);
 } // namespace interfaces
 
-#endif // BITCOIN_INTERFACES_IPC_H
+#endif // QTC_INTERFACES_IPC_H

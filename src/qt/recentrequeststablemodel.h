@@ -1,9 +1,9 @@
-// Copyright (c) 2011-2021 The Bitcoin Core developers
+// Copyright (c) 2011-2021 The QTC Core developers
 // Distributed under the MIT software license, see the accompanying
 // file COPYING or http://www.opensource.org/licenses/mit-license.php.
 
-#ifndef BITCOIN_QT_RECENTREQUESTSTABLEMODEL_H
-#define BITCOIN_QT_RECENTREQUESTSTABLEMODEL_H
+#ifndef QTC_QT_RECENTREQUESTSTABLEMODEL_H
+#define QTC_QT_RECENTREQUESTSTABLEMODEL_H
 
 #include <qt/sendcoinsrecipient.h>
 
@@ -18,10 +18,10 @@ class WalletModel;
 class RecentRequestEntry
 {
 public:
-    RecentRequestEntry() = default;
+    RecentRequestEntry() : nVersion(RecentRequestEntry::CURRENT_VERSION) {}
 
     static const int CURRENT_VERSION = 1;
-    int nVersion{RecentRequestEntry::CURRENT_VERSION};
+    int nVersion;
     int64_t id{0};
     QDateTime date;
     SendCoinsRecipient recipient;
@@ -46,7 +46,7 @@ private:
     Qt::SortOrder order;
 };
 
-/** Model for list of recently generated payment requests / bitcoin: URIs.
+/** Model for list of recently generated payment requests / qtc: URIs.
  * Part of wallet model.
  */
 class RecentRequestsTableModel: public QAbstractTableModel
@@ -98,4 +98,4 @@ private:
     QString getAmountTitle();
 };
 
-#endif // BITCOIN_QT_RECENTREQUESTSTABLEMODEL_H
+#endif // QTC_QT_RECENTREQUESTSTABLEMODEL_H

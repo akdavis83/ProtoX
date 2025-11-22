@@ -1,4 +1,4 @@
-# Copyright (c) The Bitcoin Core developers
+# Copyright (c) 2020 The Quantum Coin Core developers
 # Distributed under the MIT software license, see the accompanying
 # file COPYING or http://www.opensource.org/licenses/mit-license.php.
 
@@ -13,7 +13,7 @@ add_custom_target(mptests)
 add_custom_target(mpcheck COMMAND ${CMAKE_CTEST_COMMAND} DEPENDS mptests)
 
 # Only add more convenient tests and check targets if project is being built
-# standalone, to prevent clashes with external projects.
+# standlone, to prevent clashes with external projects.
 if (MP_STANDALONE)
   add_custom_target(tests DEPENDS mptests)
   add_custom_target(check DEPENDS mpcheck)

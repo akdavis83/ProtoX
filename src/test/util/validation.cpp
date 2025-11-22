@@ -1,4 +1,4 @@
-// Copyright (c) 2020-2022 The Bitcoin Core developers
+// Copyright (c) 2020-2022 The QTC Core developers
 // Distributed under the MIT software license, see the accompanying
 // file COPYING or http://www.opensource.org/licenses/mit-license.php.
 
@@ -9,15 +9,6 @@
 #include <validation.h>
 #include <validationinterface.h>
 
-void TestChainstateManager::DisableNextWrite()
-{
-    struct TestChainstate : public Chainstate {
-        void ResetNextWrite() { m_next_write = NodeClock::time_point::max() - 1s; }
-    };
-    for (auto* cs : GetAll()) {
-        static_cast<TestChainstate*>(cs)->ResetNextWrite();
-    }
-}
 void TestChainstateManager::ResetIbd()
 {
     m_cached_finished_ibd = false;

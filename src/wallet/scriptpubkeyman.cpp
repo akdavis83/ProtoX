@@ -1,4 +1,4 @@
-// Copyright (c) 2019-present The Bitcoin Core developers
+// Copyright (c) 2019-present The QTC Core developers
 // Distributed under the MIT software license, see the accompanying
 // file COPYING or http://www.opensource.org/licenses/mit-license.php.
 
@@ -197,15 +197,16 @@ IsMineResult LegacyWalletIsMineInnerDONOTUSE(const LegacyDataSPKM& keystore, con
 
 } // namespace
 
-bool LegacyDataSPKM::IsMine(const CScript& script) const
+isminetype LegacyDataSPKM::IsMine(const CScript& script) const
 {
     switch (LegacyWalletIsMineInnerDONOTUSE(*this, script, IsMineSigVersion::TOP)) {
     case IsMineResult::INVALID:
     case IsMineResult::NO:
-        return false;
+        return ISMINE_NO;
     case IsMineResult::WATCH_ONLY:
+        return ISMINE_WATCH_ONLY;
     case IsMineResult::SPENDABLE:
-        return true;
+        return ISMINE_SPENDABLE;
     }
     assert(false);
 }
@@ -506,12 +507,12 @@ std::unordered_set<CScript, SaltedSipHasher> LegacyDataSPKM::GetCandidateScriptP
 
 std::unordered_set<CScript, SaltedSipHasher> LegacyDataSPKM::GetScriptPubKeys() const
 {
-    // Run IsMine() on each candidate output script. Any script that IsMine is an output
+    // Run IsMine() on each candidate output script. Any script that is not ISMINE_NO is an output
     // script to return.
     // This both filters out things that are not watched by the wallet, and things that are invalid.
     std::unordered_set<CScript, SaltedSipHasher> spks;
     for (const CScript& script : GetCandidateScriptPubKeys()) {
-        if (IsMine(script)) {
+        if (IsMine(script) != ISMINE_NO) {
             spks.insert(script);
         }
     }
@@ -524,7 +525,7 @@ std::unordered_set<CScript, SaltedSipHasher> LegacyDataSPKM::GetNotMineScriptPub
     LOCK(cs_KeyStore);
     std::unordered_set<CScript, SaltedSipHasher> spks;
     for (const CScript& script : setWatchOnly) {
-        if (!IsMine(script)) spks.insert(script);
+        if (IsMine(script) == ISMINE_NO) spks.insert(script);
     }
     return spks;
 }
@@ -612,7 +613,7 @@ std::optional<MigrationData> LegacyDataSPKM::MigrateToDescriptor()
         for (const CScript& spk : desc_spks) {
             size_t erased = spks.erase(spk);
             assert(erased == 1);
-            assert(IsMine(spk));
+            assert(IsMine(spk) == ISMINE_SPENDABLE);
         }
 
         out.desc_spkms.push_back(std::move(desc_spk_man));
@@ -624,13 +625,10 @@ std::optional<MigrationData> LegacyDataSPKM::MigrateToDescriptor()
     for (const auto& chain_pair : m_inactive_hd_chains) {
         chains.push_back(chain_pair.second);
     }
-
-    bool can_support_hd_split_feature = m_hd_chain.nVersion >= CHDChain::VERSION_HD_CHAIN_SPLIT;
-
     for (const CHDChain& chain : chains) {
         for (int i = 0; i < 2; ++i) {
             // Skip if doing internal chain and split chain is not supported
-            if (chain.seed_id.IsNull() || (i == 1 && !can_support_hd_split_feature)) {
+            if (chain.seed_id.IsNull() || (i == 1 && !m_storage.CanSupportFeature(FEATURE_HD_SPLIT))) {
                 continue;
             }
             // Get the master xprv
@@ -661,7 +659,7 @@ std::optional<MigrationData> LegacyDataSPKM::MigrateToDescriptor()
             for (const CScript& spk : desc_spks) {
                 size_t erased = spks.erase(spk);
                 assert(erased == 1);
-                assert(IsMine(spk));
+                assert(IsMine(spk) == ISMINE_SPENDABLE);
             }
 
             out.desc_spkms.push_back(std::move(desc_spk_man));
@@ -748,7 +746,7 @@ std::optional<MigrationData> LegacyDataSPKM::MigrateToDescriptor()
         for (const CScript& desc_spk : desc_spks) {
             auto del_it = spks.find(desc_spk);
             assert(del_it != spks.end());
-            assert(IsMine(desc_spk));
+            assert(IsMine(desc_spk) != ISMINE_NO);
             it = spks.erase(del_it);
         }
     }
@@ -762,14 +760,14 @@ std::optional<MigrationData> LegacyDataSPKM::MigrateToDescriptor()
     // Legacy wallets can also contain scripts whose P2SH, P2WSH, or P2SH-P2WSH it is not watching for
     // but can provide script data to a PSBT spending them. These "solvable" output scripts will need to
     // be put into the separate "solvables" wallet.
-    // These can be detected by going through the entire candidate output scripts, finding the not IsMine scripts,
+    // These can be detected by going through the entire candidate output scripts, finding the ISMINE_NO scripts,
     // and checking CanProvide() which will dummy sign.
     for (const CScript& script : GetCandidateScriptPubKeys()) {
         // Since we only care about P2SH, P2WSH, and P2SH-P2WSH, filter out any scripts that are not those
         if (!script.IsPayToScriptHash() && !script.IsPayToWitnessScriptHash()) {
             continue;
         }
-        if (IsMine(script)) {
+        if (IsMine(script) != ISMINE_NO) {
             continue;
         }
         SignatureData dummy_sigdata;
@@ -861,10 +859,13 @@ util::Result<CTxDestination> DescriptorScriptPubKeyMan::GetNewDestination(const 
     }
 }
 
-bool DescriptorScriptPubKeyMan::IsMine(const CScript& script) const
+isminetype DescriptorScriptPubKeyMan::IsMine(const CScript& script) const
 {
     LOCK(cs_desc_man);
-    return m_map_script_pub_keys.contains(script);
+    if (m_map_script_pub_keys.count(script) > 0) {
+        return ISMINE_SPENDABLE;
+    }
+    return ISMINE_NO;
 }
 
 bool DescriptorScriptPubKeyMan::CheckDecryptionKey(const CKeyingMaterial& master_key)
@@ -995,7 +996,7 @@ bool DescriptorScriptPubKeyMan::TopUp(unsigned int size)
     WalletBatch batch(m_storage.GetDatabase());
     if (!batch.TxnBegin()) return false;
     bool res = TopUpWithDB(batch, size);
-    if (!batch.TxnCommit()) throw std::runtime_error(strprintf("Error during descriptors keypool top up. Cannot commit changes for wallet [%s]", m_storage.LogName()));
+    if (!batch.TxnCommit()) throw std::runtime_error(strprintf("Error during descriptors keypool top up. Cannot commit changes for wallet %s", m_storage.GetDisplayName()));
     return res;
 }
 
@@ -1256,10 +1257,6 @@ std::unique_ptr<FlatSigningProvider> DescriptorScriptPubKeyMan::GetSigningProvid
         FlatSigningProvider master_provider;
         master_provider.keys = GetKeys();
         m_wallet_descriptor.descriptor->ExpandPrivate(index, master_provider, *out_keys);
-
-        // Always include musig_secnonces as this descriptor may have a participant private key
-        // but not a musig() descriptor
-        out_keys->musig2_secnonces = &m_musig2_secnonces;
     }
 
     return out_keys;

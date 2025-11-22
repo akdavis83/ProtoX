@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-# Copyright (c) 2014-2022 The Bitcoin Core developers
+# Copyright (c) 2014-2022 The Quantum Coin Core developers
 # Distributed under the MIT software license, see the accompanying
 # file COPYING or http://www.opensource.org/licenses/mit-license.php.
 """Test BIP68 implementation."""
@@ -25,7 +25,7 @@ from test_framework.script import (
     CScript,
     OP_TRUE,
 )
-from test_framework.test_framework import BitcoinTestFramework
+from test_framework.test_framework import Quantum CoinTestFramework
 from test_framework.util import (
     assert_equal,
     assert_greater_than,
@@ -44,7 +44,7 @@ SEQUENCE_LOCKTIME_MASK = 0x0000ffff
 # RPC error for non-BIP68 final transactions
 NOT_FINAL_ERROR = "non-BIP68-final"
 
-class BIP68Test(BitcoinTestFramework):
+class BIP68Test(Quantum CoinTestFramework):
     def set_test_params(self):
         self.num_nodes = 2
         self.extra_args = [
@@ -327,7 +327,7 @@ class BIP68Test(BitcoinTestFramework):
         for i in range(2):
             block = create_block(tmpl=tmpl, ntime=cur_time)
             block.solve()
-            tip = block.hash_int
+            tip = block.sha256
             assert_equal(None if i == 1 else 'inconclusive', self.nodes[0].submitblock(block.serialize().hex()))
             tmpl = self.nodes[0].getblocktemplate(NORMAL_GBT_REQUEST_PARAMS)
             tmpl['previousblockhash'] = '%x' % tip
@@ -383,7 +383,7 @@ class BIP68Test(BitcoinTestFramework):
         block.solve()
 
         assert_equal(None, self.nodes[0].submitblock(block.serialize().hex()))
-        assert_equal(self.nodes[0].getbestblockhash(), block.hash_hex)
+        assert_equal(self.nodes[0].getbestblockhash(), block.hash)
 
     def activateCSV(self):
         # activation should happen at block height 432 (3 periods)

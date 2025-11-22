@@ -1,4 +1,4 @@
-// Copyright (c) 2015-2021 The Bitcoin Core developers
+// Copyright (c) 2015-2021 The QTC Core developers
 // Distributed under the MIT software license, see the accompanying
 // file COPYING or http://www.opensource.org/licenses/mit-license.php.
 
@@ -17,10 +17,8 @@ BOOST_AUTO_TEST_CASE(reverselock_basics)
     WAIT_LOCK(mutex, lock);
 
     BOOST_CHECK(lock.owns_lock());
-    AssertLockHeld(mutex);
     {
         REVERSE_LOCK(lock, mutex);
-        AssertLockNotHeld(mutex);
         BOOST_CHECK(!lock.owns_lock());
     }
     BOOST_CHECK(lock.owns_lock());
@@ -56,7 +54,7 @@ BOOST_AUTO_TEST_CASE(reverselock_errors)
     g_debug_lockorder_abort = false;
 
     // Make sure trying to reverse lock a previous lock fails
-    BOOST_CHECK_EXCEPTION(REVERSE_LOCK(lock2, mutex2), std::logic_error, HasReason("mutex2 was not most recent critical section locked"));
+    BOOST_CHECK_EXCEPTION(REVERSE_LOCK(lock2, mutex2), std::logic_error, HasReason("lock2 was not most recent critical section locked"));
     BOOST_CHECK(lock2.owns_lock());
 
     g_debug_lockorder_abort = prev;

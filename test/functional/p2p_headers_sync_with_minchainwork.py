@@ -1,10 +1,10 @@
 #!/usr/bin/env python3
-# Copyright (c) 2019-present The Bitcoin Core developers
+# Copyright (c) 2019-present The Quantum Coin Core developers
 # Distributed under the MIT software license, see the accompanying
 # file COPYING or http://www.opensource.org/licenses/mit-license.php.
 """Test that we reject low difficulty headers to prevent our block tree from filling up with useless bloat"""
 
-from test_framework.test_framework import BitcoinTestFramework
+from test_framework.test_framework import Quantum CoinTestFramework
 
 from test_framework.p2p import (
     P2PInterface,
@@ -27,7 +27,7 @@ NODE1_BLOCKS_REQUIRED = 15
 NODE2_BLOCKS_REQUIRED = 2047
 
 
-class RejectLowDifficultyHeadersTest(BitcoinTestFramework):
+class RejectLowDifficultyHeadersTest(Quantum CoinTestFramework):
     def set_test_params(self):
         self.rpc_timeout *= 4  # To avoid timeout when generating BLOCKS_TO_MINE
         self.setup_clean_chain = True
@@ -129,7 +129,7 @@ class RejectLowDifficultyHeadersTest(BitcoinTestFramework):
             block = create_block(hashprev = hashPrevBlock, tmpl=node.getblocktemplate(NORMAL_GBT_REQUEST_PARAMS))
             block.solve()
             new_blocks.append(block)
-            hashPrevBlock = block.hash_int
+            hashPrevBlock = block.sha256
 
         headers_message = msg_headers(headers=new_blocks)
         p2p.send_and_ping(headers_message)

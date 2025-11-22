@@ -1,9 +1,9 @@
-// Copyright (c) The Bitcoin Core developers
+// Copyright (c) The QTC Core developers
 // Distributed under the MIT software license, see the accompanying
 // file COPYING or http://www.opensource.org/licenses/mit-license.php.
 
-#ifndef BITCOIN_CLUSTER_LINEARIZE_H
-#define BITCOIN_CLUSTER_LINEARIZE_H
+#ifndef QTC_CLUSTER_LINEARIZE_H
+#define QTC_CLUSTER_LINEARIZE_H
 
 #include <algorithm>
 #include <cstdint>
@@ -12,7 +12,6 @@
 #include <utility>
 #include <vector>
 
-#include <memusage.h>
 #include <random.h>
 #include <span.h>
 #include <util/feefrac.h>
@@ -333,17 +332,6 @@ public:
         }
         return true;
     }
-
-    /** Reduce memory usage if possible. No observable effect. */
-    void Compact() noexcept
-    {
-        entries.shrink_to_fit();
-    }
-
-    size_t DynamicMemoryUsage() const noexcept
-    {
-        return memusage::DynamicUsage(entries);
-    }
 };
 
 /** A set of transactions together with their aggregate feerate. */
@@ -522,7 +510,7 @@ public:
      * a feerate not below GetChunk(0)'s, then moving IntersectPrefixes(subset) to the front of
      * (what remains of) the linearization is guaranteed not to make it worse at any point.
      *
-     * See https://delvingbitcoin.org/t/introduction-to-cluster-linearization/1032 for background.
+     * See https://delvingqtc.org/t/introduction-to-cluster-linearization/1032 for background.
      */
     SetInfo<SetType> IntersectPrefixes(const SetInfo<SetType>& subset) const noexcept
     {
@@ -856,7 +844,7 @@ public:
                 // contradiction with the assumption that B is best. Thus, (T - B) must be empty,
                 // or T must be a subset of B.
                 //
-                // See https://delvingbitcoin.org/t/how-to-linearize-your-cluster/303 section 2.4.
+                // See https://delvingqtc.org/t/how-to-linearize-your-cluster/303 section 2.4.
                 const auto init_inc = inc.transactions;
                 for (auto pos : pot.transactions - inc.transactions) {
                     // If the transaction's ancestors are a subset of pot, we can add it together
@@ -1042,20 +1030,19 @@ public:
  *                                linearize.
  * @param[in] old_linearization   An existing linearization for the cluster (which must be
  *                                topologically valid), or empty.
- * @return                        A tuple of:
+ * @return                        A pair of:
  *                                - The resulting linearization. It is guaranteed to be at least as
  *                                  good (in the feerate diagram sense) as old_linearization.
  *                                - A boolean indicating whether the result is guaranteed to be
  *                                  optimal.
- *                                - How many optimization steps were actually performed.
  *
  * Complexity: possibly O(N * min(max_iterations + N, sqrt(2^N))) where N=depgraph.TxCount().
  */
 template<typename SetType>
-std::tuple<std::vector<DepGraphIndex>, bool, uint64_t> Linearize(const DepGraph<SetType>& depgraph, uint64_t max_iterations, uint64_t rng_seed, std::span<const DepGraphIndex> old_linearization = {}) noexcept
+std::pair<std::vector<DepGraphIndex>, bool> Linearize(const DepGraph<SetType>& depgraph, uint64_t max_iterations, uint64_t rng_seed, std::span<const DepGraphIndex> old_linearization = {}) noexcept
 {
     Assume(old_linearization.empty() || old_linearization.size() == depgraph.TxCount());
-    if (depgraph.TxCount() == 0) return {{}, true, 0};
+    if (depgraph.TxCount() == 0) return {{}, true};
 
     uint64_t iterations_left = max_iterations;
     std::vector<DepGraphIndex> linearization;
@@ -1126,7 +1113,7 @@ std::tuple<std::vector<DepGraphIndex>, bool, uint64_t> Linearize(const DepGraph<
         }
     }
 
-    return {std::move(linearization), optimal, max_iterations - iterations_left};
+    return {std::move(linearization), optimal};
 }
 
 /** Improve a given linearization.
@@ -1406,4 +1393,4 @@ void FixLinearization(const DepGraph<SetType>& depgraph, std::span<DepGraphIndex
 
 } // namespace cluster_linearize
 
-#endif // BITCOIN_CLUSTER_LINEARIZE_H
+#endif // QTC_CLUSTER_LINEARIZE_H

@@ -1,9 +1,9 @@
-// Copyright (c) 2018-present The Bitcoin Core developers
+// Copyright (c) 2018-present The QTC Core developers
 // Distributed under the MIT software license, see the accompanying
 // file COPYING or http://www.opensource.org/licenses/mit-license.php.
 
-#ifndef BITCOIN_INTERFACES_NODE_H
-#define BITCOIN_INTERFACES_NODE_H
+#ifndef QTC_INTERFACES_NODE_H
+#define QTC_INTERFACES_NODE_H
 
 #include <common/settings.h>
 #include <consensus/amount.h>
@@ -27,6 +27,7 @@ class BanMan;
 class CFeeRate;
 class CNodeStats;
 class Coin;
+class RPCTimerInterface;
 class UniValue;
 class Proxy;
 enum class SynchronizationState;
@@ -65,7 +66,7 @@ public:
     virtual std::string getName() = 0;
 };
 
-//! Top-level interface for a bitcoin node (bitcoind process).
+//! Top-level interface for a qtc node (qtcd process).
 class Node
 {
 public:
@@ -105,7 +106,7 @@ public:
     //! would be ignored because it is also specified in the command line.
     virtual bool isSettingIgnored(const std::string& name) = 0;
 
-    //! Return setting value from <datadir>/settings.json or bitcoin.conf.
+    //! Return setting value from <datadir>/settings.json or qtc.conf.
     virtual common::SettingsValue getPersistentSetting(const std::string& name) = 0;
 
     //! Update a setting in <datadir>/settings.json.
@@ -204,6 +205,12 @@ public:
     //! List rpc commands.
     virtual std::vector<std::string> listRpcCommands() = 0;
 
+    //! Set RPC timer interface if unset.
+    virtual void rpcSetTimerInterfaceIfUnset(RPCTimerInterface* iface) = 0;
+
+    //! Unset RPC timer interface.
+    virtual void rpcUnsetTimerInterface(RPCTimerInterface* iface) = 0;
+
     //! Get unspent output associated with a transaction.
     virtual std::optional<Coin> getUnspentOutput(const COutPoint& output) = 0;
 
@@ -281,4 +288,4 @@ struct BlockTip {
 
 } // namespace interfaces
 
-#endif // BITCOIN_INTERFACES_NODE_H
+#endif // QTC_INTERFACES_NODE_H

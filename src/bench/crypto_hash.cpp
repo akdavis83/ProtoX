@@ -1,4 +1,4 @@
-// Copyright (c) 2016-2022 The Bitcoin Core developers
+// Copyright (c) 2016-2022 The QTC Core developers
 // Distributed under the MIT software license, see the accompanying
 // file COPYING or http://www.opensource.org/licenses/mit-license.php.
 
@@ -84,12 +84,12 @@ static void SHA256_SHANI(benchmark::Bench& bench)
     SHA256AutoDetect();
 }
 
-static void SHA3_256_1M(benchmark::Bench& bench)
+static void SHA3_512_1M(benchmark::Bench& bench)
 {
-    uint8_t hash[SHA3_256::OUTPUT_SIZE];
+    uint8_t hash[SHA3_512::OUTPUT_SIZE];
     std::vector<uint8_t> in(BUFFER_SIZE,0);
     bench.batch(in.size()).unit("byte").run([&] {
-        SHA3_256().Write(in).Finalize(hash);
+        SHA3_512().Write(in).Finalize(hash);
     });
 }
 
@@ -269,7 +269,7 @@ BENCHMARK(SHA256_SSE4, benchmark::PriorityLevel::HIGH);
 BENCHMARK(SHA256_AVX2, benchmark::PriorityLevel::HIGH);
 BENCHMARK(SHA256_SHANI, benchmark::PriorityLevel::HIGH);
 BENCHMARK(SHA512, benchmark::PriorityLevel::HIGH);
-BENCHMARK(SHA3_256_1M, benchmark::PriorityLevel::HIGH);
+BENCHMARK(SHA3_512_1M, benchmark::PriorityLevel::HIGH);
 
 BENCHMARK(SHA256_32b_STANDARD, benchmark::PriorityLevel::HIGH);
 BENCHMARK(SHA256_32b_SSE4, benchmark::PriorityLevel::HIGH);

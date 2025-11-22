@@ -1,9 +1,9 @@
-// Copyright (c) 2018-present The Bitcoin Core developers
+// Copyright (c) 2018-present The QTC Core developers
 // Distributed under the MIT software license, see the accompanying
 // file COPYING or http://www.opensource.org/licenses/mit-license.php.
 
-#ifndef BITCOIN_SCRIPT_PARSING_H
-#define BITCOIN_SCRIPT_PARSING_H
+#ifndef QTC_SCRIPT_PARSING_H
+#define QTC_SCRIPT_PARSING_H
 
 #include <span.h>
 
@@ -13,10 +13,10 @@ namespace script {
 
 /** Parse a constant.
  *
- * If sp's initial part matches str, sp is optionally updated to skip that part, and true is returned.
+ * If sp's initial part matches str, sp is updated to skip that part, and true is returned.
  * Otherwise sp is unmodified and false is returned.
  */
-bool Const(const std::string& str, std::span<const char>& sp, bool skip = true);
+bool Const(const std::string& str, std::span<const char>& sp);
 
 /** Parse a function call.
  *
@@ -37,4 +37,4 @@ std::span<const char> Expr(std::span<const char>& sp);
 
 } // namespace script
 
-#endif // BITCOIN_SCRIPT_PARSING_H
+#endif // QTC_SCRIPT_PARSING_H

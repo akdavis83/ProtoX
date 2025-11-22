@@ -1,9 +1,9 @@
-// Copyright (c) 2023 The Bitcoin Core developers
+// Copyright (c) 2023 The QTC Core developers
 // Distributed under the MIT software license, see the accompanying
 // file COPYING or https://www.opensource.org/licenses/mit-license.php.
 
-#ifndef BITCOIN_ADDRESSTYPE_H
-#define BITCOIN_ADDRESSTYPE_H
+#ifndef QTC_ADDRESSTYPE_H
+#define QTC_ADDRESSTYPE_H
 
 #include <attributes.h>
 #include <pubkey.h>
@@ -127,6 +127,31 @@ struct PayToAnchor : public WitnessUnknown
     };
 };
 
+/** QTC Quantum-Safe Address Types */
+
+struct QKeyHash : public BaseHash<uint256>
+{
+    QKeyHash() : BaseHash() {}
+    explicit QKeyHash(const uint256& hash) : BaseHash(hash) {}
+    explicit QKeyHash(const QCompressedPubKey& pubkey);
+};
+
+struct QScriptHash : public BaseHash<uint256>  
+{
+    QScriptHash() : BaseHash() {}
+    explicit QScriptHash(const uint256& hash) : BaseHash(hash) {}
+    explicit QScriptHash(const CScript& script);
+};
+
+/** Quantum-Safe Witness Address (P2QKH equivalent) */
+struct WitnessV2QKeyHash : public BaseHash<uint256>
+{
+    WitnessV2QKeyHash() : BaseHash() {}
+    explicit WitnessV2QKeyHash(const uint256& hash) : BaseHash(hash) {}
+    explicit WitnessV2QKeyHash(const QCompressedPubKey& pubkey);
+    explicit WitnessV2QKeyHash(const QKeyHash& key_hash);
+};
+
 /**
  * A txout script categorized into standard templates.
  *  * CNoDestination: Optionally a script, no corresponding address.
@@ -137,10 +162,13 @@ struct PayToAnchor : public WitnessUnknown
  *  * WitnessV0KeyHash: TxoutType::WITNESS_V0_KEYHASH destination (P2WPKH address)
  *  * WitnessV1Taproot: TxoutType::WITNESS_V1_TAPROOT destination (P2TR address)
  *  * PayToAnchor: TxoutType::ANCHOR destination (P2A address)
+ *  * QKeyHash: TxoutType::QUANTUM_KEYHASH destination (P2QKH address)
+ *  * QScriptHash: TxoutType::QUANTUM_SCRIPTHASH destination (P2QSH address)  
+ *  * WitnessV2QKeyHash: TxoutType::WITNESS_V2_QKEYHASH destination (P2WQKH address)
  *  * WitnessUnknown: TxoutType::WITNESS_UNKNOWN destination (P2W??? address)
- *  A CTxDestination is the internal data type encoded in a bitcoin address
+ *  A CTxDestination is the internal data type encoded in a qtc address
  */
-using CTxDestination = std::variant<CNoDestination, PubKeyDestination, PKHash, ScriptHash, WitnessV0ScriptHash, WitnessV0KeyHash, WitnessV1Taproot, PayToAnchor, WitnessUnknown>;
+using CTxDestination = std::variant<CNoDestination, PubKeyDestination, PKHash, ScriptHash, WitnessV0ScriptHash, WitnessV0KeyHash, WitnessV1Taproot, PayToAnchor, QKeyHash, QScriptHash, WitnessV2QKeyHash, WitnessUnknown>;
 
 /** Check whether a CTxDestination corresponds to one with an address. */
 bool IsValidDestination(const CTxDestination& dest);
@@ -158,10 +186,10 @@ bool IsValidDestination(const CTxDestination& dest);
 bool ExtractDestination(const CScript& scriptPubKey, CTxDestination& addressRet);
 
 /**
- * Generate a Bitcoin scriptPubKey for the given CTxDestination. Returns a P2PKH
+ * Generate a Quantum Coin scriptPubKey for the given CTxDestination. Returns a P2PKH
  * script for a CKeyID destination, a P2SH script for a CScriptID, and an empty
  * script for CNoDestination.
  */
 CScript GetScriptForDestination(const CTxDestination& dest);
 
-#endif // BITCOIN_ADDRESSTYPE_H
+#endif // QTC_ADDRESSTYPE_H

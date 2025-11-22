@@ -1,5 +1,5 @@
 // Copyright (c) 2010 Satoshi Nakamoto
-// Copyright (c) 2009-2022 The Bitcoin Core developers
+// Copyright (c) 2009-2022 The QTC Core developers
 // Distributed under the MIT software license, see the accompanying
 // file COPYING or http://www.opensource.org/licenses/mit-license.php.
 
@@ -54,7 +54,7 @@ bool noui_ThreadSafeQuestion(const bilingual_str& /* ignored interactive message
 
 void noui_InitMessage(const std::string& message)
 {
-    LogInfo("init message: %s", message);
+    LogPrintf("init message: %s\n", message);
 }
 
 void noui_connect()
@@ -66,19 +66,19 @@ void noui_connect()
 
 bool noui_ThreadSafeMessageBoxRedirect(const bilingual_str& message, const std::string& caption, unsigned int style)
 {
-    LogInfo("%s: %s", caption, message.original);
+    LogPrintf("%s: %s\n", caption, message.original);
     return false;
 }
 
 bool noui_ThreadSafeQuestionRedirect(const bilingual_str& /* ignored interactive message */, const std::string& message, const std::string& caption, unsigned int style)
 {
-    LogInfo("%s: %s", caption, message);
+    LogPrintf("%s: %s\n", caption, message);
     return false;
 }
 
 void noui_InitMessageRedirect(const std::string& message)
 {
-    LogInfo("init message: %s", message);
+    LogPrintf("init message: %s\n", message);
 }
 
 void noui_test_redirect()

@@ -1,16 +1,13 @@
-// Copyright (c) 2009-2010 Satoshi Nakamoto
-// Copyright (c) 2009-2019 The Bitcoin Core developers
-// Distributed under the MIT software license, see the accompanying
-// file COPYING or http://www.opensource.org/licenses/mit-license.php.
 
-#include <primitives/block.h>
 
-#include <hash.h>
-#include <tinyformat.h>
+#include "primitives/block.h"
+#include "hash.h"
+#include "tinyformat.h"
+#include "utilstrencodings.h"
 
-uint256 CBlockHeader::GetHash() const
+uint256 QTCBlockHeader::GetHash() const
 {
-    return (HashWriter{} << *this).GetHash();
+    return SerializeHash(*this);
 }
 
 std::string CBlock::ToString() const
@@ -28,3 +25,4 @@ std::string CBlock::ToString() const
     }
     return s.str();
 }
+

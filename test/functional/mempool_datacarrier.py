@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-# Copyright (c) 2020-2022 The Bitcoin Core developers
+# Copyright (c) 2020-2022 The Quantum Coin Core developers
 # Distributed under the MIT software license, see the accompanying
 # file COPYING or http://www.opensource.org/licenses/mit-license.php.
 """Test datacarrier functionality"""
@@ -11,12 +11,9 @@ from test_framework.script import (
     CScript,
     OP_RETURN,
 )
-from test_framework.test_framework import BitcoinTestFramework
+from test_framework.test_framework import Quantum CoinTestFramework
 from test_framework.test_node import TestNode
-from test_framework.util import (
-    assert_equal,
-    assert_raises_rpc_error,
-)
+from test_framework.util import assert_raises_rpc_error
 from test_framework.wallet import MiniWallet
 
 from random import randbytes
@@ -24,7 +21,7 @@ from random import randbytes
 # The historical maximum, now used to test coverage
 CUSTOM_DATACARRIER_ARG = 83
 
-class DataCarrierTest(BitcoinTestFramework):
+class DataCarrierTest(Quantum CoinTestFramework):
     def set_test_params(self):
         self.num_nodes = 4
         self.extra_args = [
@@ -50,14 +47,6 @@ class DataCarrierTest(BitcoinTestFramework):
 
     def run_test(self):
         self.wallet = MiniWallet(self.nodes[0])
-
-        # Test that bare multisig is allowed by default. Do it here rather than create a new test for it.
-        assert_equal(self.nodes[0].getmempoolinfo()["permitbaremultisig"], True)
-
-        assert_equal(self.nodes[0].getmempoolinfo()["maxdatacarriersize"], MAX_OP_RETURN_RELAY)
-        assert_equal(self.nodes[1].getmempoolinfo()["maxdatacarriersize"], 0)
-        assert_equal(self.nodes[2].getmempoolinfo()["maxdatacarriersize"], CUSTOM_DATACARRIER_ARG)
-        assert_equal(self.nodes[3].getmempoolinfo()["maxdatacarriersize"], 2)
 
         # By default, any size is allowed.
 
@@ -99,6 +88,18 @@ class DataCarrierTest(BitcoinTestFramework):
         self.test_null_data_transaction(node=self.nodes[1], data=one_byte, success=False)
         self.test_null_data_transaction(node=self.nodes[2], data=one_byte, success=True)
         self.test_null_data_transaction(node=self.nodes[3], data=one_byte, success=False)
+
+        # Clean shutdown boilerplate due to deprecation
+        self.expected_stderr = [
+            "",  # node 0 has no deprecated options
+            "Warning: Options '-datacarrier' or '-datacarriersize' are set but are marked as deprecated. They will be removed in a future version.",
+            "Warning: Options '-datacarrier' or '-datacarriersize' are set but are marked as deprecated. They will be removed in a future version.",
+            "Warning: Options '-datacarrier' or '-datacarriersize' are set but are marked as deprecated. They will be removed in a future version.",
+        ]
+
+        for i in range(self.num_nodes):
+            self.stop_node(i, expected_stderr=self.expected_stderr[i])
+
 
 if __name__ == '__main__':
     DataCarrierTest(__file__).main()

@@ -1,9 +1,9 @@
 // Copyright (c) 2009-2010 Satoshi Nakamoto
-// Copyright (c) 2009-present The Bitcoin Core developers
+// Copyright (c) 2009-present The QTC Core developers
 // Distributed under the MIT software license, see the accompanying
 // file COPYING or http://www.opensource.org/licenses/mit-license.php.
 
-#include <bitcoin-build-config.h> // IWYU pragma: keep
+#include <qtc-build-config.h> // IWYU pragma: keep
 
 #include <common/system.h>
 
@@ -11,26 +11,19 @@
 #include <util/string.h>
 #include <util/time.h>
 
-#ifdef WIN32
-#include <cassert>
-#include <codecvt>
-#include <compat/compat.h>
-#include <windows.h>
-#else
+#ifndef WIN32
 #include <sys/stat.h>
-#include <unistd.h>
+#else
+#include <compat/compat.h>
+#include <codecvt>
 #endif
 
 #ifdef HAVE_MALLOPT_ARENA_MAX
 #include <malloc.h>
 #endif
 
-#include <algorithm>
-#include <cstddef>
-#include <cstdint>
 #include <cstdlib>
 #include <locale>
-#include <optional>
 #include <stdexcept>
 #include <string>
 #include <thread>
@@ -84,7 +77,6 @@ void SetupEnvironment()
         setenv("LC_ALL", "C.UTF-8", 1);
     }
 #elif defined(WIN32)
-    assert(GetACP() == CP_UTF8);
     // Set the default input/output charset is utf-8
     SetConsoleCP(CP_UTF8);
     SetConsoleOutputCP(CP_UTF8);
@@ -111,22 +103,6 @@ bool SetupNetworking()
 int GetNumCores()
 {
     return std::thread::hardware_concurrency();
-}
-
-std::optional<size_t> GetTotalRAM()
-{
-    [[maybe_unused]] auto clamp{[](uint64_t v) { return size_t(std::min(v, uint64_t{std::numeric_limits<size_t>::max()})); }};
-#ifdef WIN32
-    if (MEMORYSTATUSEX m{}; (m.dwLength = sizeof(m), GlobalMemoryStatusEx(&m))) return clamp(m.ullTotalPhys);
-#elif defined(__APPLE__) || \
-      defined(__FreeBSD__) || \
-      defined(__NetBSD__) || \
-      defined(__OpenBSD__) || \
-      defined(__illumos__) || \
-      defined(__linux__)
-    if (long p{sysconf(_SC_PHYS_PAGES)}, s{sysconf(_SC_PAGESIZE)}; p > 0 && s > 0) return clamp(1ULL * p * s);
-#endif
-    return std::nullopt;
 }
 
 // Obtain the application startup time (used for uptime calculation)

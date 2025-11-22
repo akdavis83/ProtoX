@@ -1,4 +1,4 @@
-// Copyright (c) 2010-2021 The Bitcoin Core developers
+// Copyright (c) 2010-2021 The QTC Core developers
 // Distributed under the MIT software license, see the accompanying
 // file COPYING or http://www.opensource.org/licenses/mit-license.php.
 
@@ -10,12 +10,11 @@
 //! dependencies. More complicated types should be defined in dedicated header
 //! files.
 
-#ifndef BITCOIN_NODE_TYPES_H
-#define BITCOIN_NODE_TYPES_H
+#ifndef QTC_NODE_TYPES_H
+#define QTC_NODE_TYPES_H
 
 #include <consensus/amount.h>
 #include <cstddef>
-#include <cstdint>
 #include <policy/policy.h>
 #include <script/script.h>
 #include <uint256.h>
@@ -98,18 +97,6 @@ struct BlockCheckOptions {
      */
     bool check_pow{true};
 };
-
-/**
- * How to broadcast a local transaction.
- * Used to influence `BroadcastTransaction()` and its callers.
- */
-enum class TxBroadcast : uint8_t {
-    /// Add the transaction to the mempool and broadcast to all peers for which tx relay is enabled.
-    MEMPOOL_AND_BROADCAST_TO_ALL,
-    /// Add the transaction to the mempool, but don't broadcast to anybody.
-    MEMPOOL_NO_BROADCAST,
-};
-
 } // namespace node
 
-#endif // BITCOIN_NODE_TYPES_H
+#endif // QTC_NODE_TYPES_H
